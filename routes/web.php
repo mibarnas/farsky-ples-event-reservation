@@ -58,18 +58,18 @@ Route::delete('event/{event:url_slug}/collaborator/{user}', [CollaboratorControl
     ->middleware(['auth', 'verified'])
     ->name('collaborator.destroy');
 
-Route::post('event/{event:url_slug}/order', [OrderController::class, 'store'])->name('order.store');
+Route::post('event/{event:url_slug}/order', [OrderController::class, 'store'])->middleware('throttle:10,1')->name('order.store');
 Route::get('event/{event:url_slug}/order', [OrderController::class, 'create'])->name('order.create');
 Route::get('event/{event:url_slug}', [EventController::class, 'show'])->name('event.show');
 
 Route::get('order/{order:url_slug}', [OrderController::class, 'sent'])->name('order.sent');
 
-Route::get('order/{order:url_slug}/confirm', [OrderController::class, 'confirm'])->middleware(['auth'])->name('order.confirm');
 Route::post('order/{order:url_slug}/confirm', [OrderController::class, 'confirmOrder'])->middleware(['auth'])->name('order.confirm.post');
 Route::post('order/{order:url_slug}/cancel', [OrderController::class, 'cancelOrder'])->middleware(['auth'])->name('order.cancel');
 
 // Reservation QR code scanning routes (for staff members)
 Route::get('reservation/{qrCode}', [ReservationController::class, 'show'])->middleware(['auth', 'verified'])->name('reservation.show');
+Route::put('event/{event:url_slug}/reservation/{reservation}/seat', [ReservationController::class, 'changeSeat'])->middleware(['auth', 'verified'])->name('reservation.change-seat');
 
 // CSV import routes
 Route::get('event/{event:url_slug}/import-csv', [OrderController::class, 'showImportCsv'])->middleware(['auth'])->name('event.import-csv');

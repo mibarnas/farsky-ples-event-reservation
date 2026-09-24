@@ -93,6 +93,7 @@ function submitOrder() {
                 currentStep.value = 2;
             } else {
                 readableErrors.value.push('Nepodarilo sa odoslať formulár. Skontrolujte chyby a skúste to znova.');
+                readableErrors.value.push(...Object.values(serverErrors));
             }
         },
         onSuccess: () => {

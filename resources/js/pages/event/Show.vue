@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { computed } from 'vue';
 import EventLayout from '@/layouts/EventLayout.vue';
 import { create } from "@/routes/order";
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { marked } from 'marked';
 
@@ -39,6 +40,9 @@ interface Location {
 
 const props = defineProps<{ event: Event; tickets: Ticket[]; location: Location, places_left: number }>();
 
+const page = usePage();
+const flashError = computed(() => (page.props as any).flash?.error as string | undefined);
+
 const formattedStartTime = computed(() => {
   if (!props.event.start_time) return '';
   const date = new Date(props.event.start_time);
@@ -69,6 +73,8 @@ const isWithinRegistrationWindow = computed(() => {
     if (now > endDate) return false;
   }
 
+  if (props.event.start_time && now >= new Date(props.event.start_time)) return false;
+
   return true;
 });
 
@@ -80,8 +86,9 @@ const registrationNotStarted = computed(() => {
 });
 
 const registrationEnded = computed(() => {
-  if (!props.event.registration_end) return false;
   const now = new Date();
+  if (props.event.start_time && now >= new Date(props.event.start_time)) return true;
+  if (!props.event.registration_end) return false;
   const endDate = new Date(props.event.registration_end);
   return now > endDate;
 });
@@ -123,6 +130,11 @@ const backgroundImageUrl = computed(() => {
 
 <template>
     <EventLayout :background="backgroundImageUrl ?? undefined">
+        <Alert v-if="flashError" class="mb-6 dark:bg-red-900 bg-red-200 border-red-600">
+            <AlertTitle>
+                <i class="fas fa-info-circle mr-2"></i> {{ flashError }}
+            </AlertTitle>
+        </Alert>
         <div class="flex flex-col gap-8">
             <div v-if="props.event.logo_image_path != '' && props.event.logo_image_path != null" class="flex flex-col items-center">
                 <img

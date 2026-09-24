@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Event;
 use App\Models\Reservation;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class ReservationController extends Controller
@@ -101,5 +104,66 @@ class ReservationController extends Controller
             'reservations' => $reservations,
             'userRole' => $userRole,
         ]);
+    }
+
+    /**
+     * Move a guest to another seat. If an active reservation already holds the
+     * target seat, the two guests swap seats.
+     */
+    public function changeSeat(Request $request, Event $event, Reservation $reservation)
+    {
+        if (! in_array($event->roleFor($request->user()), ['owner', 'manager'], true)) {
+            abort(403, 'Nemáte oprávnenie na zmenu miest.');
+        }
+
+        if ($reservation->order->event_id !== $event->id) {
+            abort(404);
+        }
+
+        if ($reservation->order->status === 'cancelled') {
+            return back()->with('error', 'Miesta v zrušenej objednávke nie je možné meniť.');
+        }
+
+        $validSeats = $event->location?->seatNumbers();
+
+        $validated = $request->validate([
+            'seat_number' => array_filter(['required', 'integer', 'min:0', $validSeats !== null ? Rule::in($validSeats) : null]),
+        ], [
+            'seat_number.in' => 'Toto miesto neexistuje na mape sedenia.',
+        ]);
+
+        $targetSeat = (int) $validated['seat_number'];
+
+        if ($targetSeat === $reservation->seat_number) {
+            return back()->withErrors(['seat_number' => 'Hosť už sedí na tomto mieste.']);
+        }
+
+        $message = DB::transaction(function () use ($event, $reservation, $targetSeat) {
+            // Same lock as order creation, so a new order cannot grab the seat mid-move
+            Event::whereKey($event->id)->lockForUpdate()->first();
+
+            $reservation->refresh();
+            $fromSeat = $reservation->seat_number;
+
+            $occupant = Reservation::where('seat_number', $targetSeat)
+                ->whereKeyNot($reservation->id)
+                ->whereHas('order', function ($query) use ($event) {
+                    $query->where('event_id', $event->id)
+                          ->where('status', '!=', 'cancelled');
+                })
+                ->first();
+
+            $reservation->update(['seat_number' => $targetSeat]);
+
+            if ($occupant) {
+                $occupant->update(['seat_number' => $fromSeat]);
+
+                return "Hostia {$reservation->guest_name} a {$occupant->guest_name} si vymenili miesta {$fromSeat} a {$targetSeat}.";
+            }
+
+            return "Hosť {$reservation->guest_name} bol presunutý z miesta {$fromSeat} na miesto {$targetSeat}.";
+        });
+
+        return back()->with('success', $message);
     }
 }

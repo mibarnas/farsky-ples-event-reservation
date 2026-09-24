@@ -8,20 +8,29 @@ use App\Mail\OrderCancelled;
 use App\Models\Event;
 use App\Models\Order;
 use App\Models\Reservation;
-use App\Models\Ticket;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class OrderController extends Controller
 {
+    private const REGISTRATION_CLOSED_MESSAGE = 'Registrácia na toto podujatie momentálne nie je otvorená.';
+
     public function create($url_slug)
     {
         $event = Event::where('url_slug', $url_slug)
             ->with(['tickets', 'reservations.order', 'location'])
             ->firstOrFail();
+
+        if (! $event->isRegistrationOpen()) {
+            return redirect()->route('event.show', $event->url_slug)
+                ->with('error', self::REGISTRATION_CLOSED_MESSAGE);
+        }
 
         // Get seat numbers only from orders that are not cancelled
         $activeReservations = $event->reservations
@@ -65,79 +74,107 @@ class OrderController extends Controller
 
     public function store(Request $request, Event $event)
     {
-        $request->validate([
+        if (! $event->isRegistrationOpen()) {
+            return redirect()->route('event.show', $event->url_slug)
+                ->with('error', self::REGISTRATION_CLOSED_MESSAGE);
+        }
+
+        $validSeats = $event->location?->seatNumbers();
+        $seatCount = count((array) $request->input('seats', []));
+
+        $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email'],
+            'email' => ['required', 'email', 'max:255'],
             'phone' => ['required', 'string', 'max:30'],
             'tickets' => ['required', 'array'],
-            'seats' => ['required', 'array'],
-            'guests' => ['required', 'array'],
+            'tickets.*' => ['integer', 'min:0', 'max:100'],
+            'seats' => ['required', 'array', 'min:1'],
+            'seats.*' => array_filter(['integer', 'min:0', 'distinct', $validSeats !== null ? Rule::in($validSeats) : null]),
+            'guests' => ['required', 'array', 'size:' . $seatCount],
+            'guests.*' => ['required', 'string', 'max:255'],
         ]);
 
-        $requestedSeats = array_values($request->seats);
-        $reservedSeats = Reservation::whereIn('seat_number', $requestedSeats)
-            ->whereHas('order', function ($query) use ($event) {
-                $query->where('event_id', $event->id)
-                      ->where('status', '!=', 'cancelled');
-            })
-            ->pluck('seat_number')
-            ->toArray();
+        $requestedSeats = array_map('intval', array_values($validated['seats']));
+        $guestNames = array_values($validated['guests']);
 
-        if (!empty($reservedSeats)) {
-            return back()->withErrors([
-                'seats' => 'Niektoré z vybratých miest sú už rezervované: ' . implode(', ', $reservedSeats)
-            ])->withInput();
-        }
+        // Only tickets of this event count, and they must pay for exactly the requested number of seats
+        $eventTickets = $event->tickets()->get()->keyBy('id');
+        $ticketAmounts = collect($validated['tickets'])
+            ->map(fn ($amount) => (int) $amount)
+            ->filter(fn ($amount) => $amount > 0);
 
-        // Capacity check: count currently reserved seats for this event (exclude cancelled orders)
-        $currentlyReservedCount = Reservation::whereHas('order', function ($query) use ($event) {
-            $query->where('event_id', $event->id)
-                  ->where('status', '!=', 'cancelled');
-        })->count();
-
-        $requestedCount = count($requestedSeats);
-
-        if (($currentlyReservedCount + $requestedCount) > ($event->seats_total ?? 0)) {
-            $available = max(0, ($event->seats_total ?? 0) - $currentlyReservedCount);
-            return back()->withErrors([
-                'seats' => 'Nie je dosť voľných miest. Zostáva ' . $available . ' miest.'
-            ])->withInput();
-        }
-
-        $order = new Order();
-        $order->event_id = $event->id;
-        $order->name = $request->name;
-        $order->email = $request->email;
-        $order->phone = $request->phone;
-        $order->status = 'pending';
-        $order->variable_symbol = (string) random_int(1000000000, 9999999999);
-//        $order->payment_note = 'VS' . $order->variable_symbol;
-        $order->url_slug = (string) Str::uuid();
-        $order->save();
-
-        foreach ($request->tickets as $ticketId => $amount) {
-            $amount = (int) $amount;
-            if ($amount <= 0) {
-                continue;
-            }
-
-            // Ensure the ticket belongs to the same event to prevent cross-event attachment
-            if (! Ticket::where('id', $ticketId)->where('event_id', $event->id)->exists()) {
-                continue;
-            }
-
-            $order->tickets()->syncWithoutDetaching([
-                $ticketId => ['amount' => $amount],
+        if ($ticketAmounts->isEmpty() || $ticketAmounts->keys()->contains(fn ($ticketId) => ! $eventTickets->has($ticketId))) {
+            throw ValidationException::withMessages([
+                'tickets' => 'Vybraté lístky nie sú platné pre toto podujatie.',
             ]);
         }
 
-        foreach ($request->seats as $seatId => $seatNumber) {
-            $reservation = new Reservation();
-            $reservation->order()->associate($order);
-            $reservation->seat_number = $seatNumber;
-            $reservation->guest_name = $request->guests[$seatId] ?? 'Guest';
-            $reservation->save();
+        $paidSeats = $ticketAmounts
+            ->map(fn ($amount, $ticketId) => $amount * max(1, (int) $eventTickets[$ticketId]->reservations))
+            ->sum();
+
+        if ($paidSeats !== count($requestedSeats)) {
+            throw ValidationException::withMessages([
+                'seats' => 'Počet vybratých miest (' . count($requestedSeats) . ') nezodpovedá počtu miest v lístkoch (' . $paidSeats . ').',
+            ]);
         }
+
+        $order = DB::transaction(function () use ($validated, $event, $requestedSeats, $guestNames, $ticketAmounts) {
+            // Serialize orders for this event so two customers cannot book the same seat concurrently
+            Event::whereKey($event->id)->lockForUpdate()->first();
+
+            $reservedSeats = Reservation::whereIn('seat_number', $requestedSeats)
+                ->whereHas('order', function ($query) use ($event) {
+                    $query->where('event_id', $event->id)
+                          ->where('status', '!=', 'cancelled');
+                })
+                ->pluck('seat_number')
+                ->toArray();
+
+            if (!empty($reservedSeats)) {
+                throw ValidationException::withMessages([
+                    'seats' => 'Niektoré z vybratých miest sú už rezervované: ' . implode(', ', $reservedSeats),
+                ]);
+            }
+
+            // Capacity check: count currently reserved seats for this event (exclude cancelled orders)
+            $currentlyReservedCount = Reservation::whereHas('order', function ($query) use ($event) {
+                $query->where('event_id', $event->id)
+                      ->where('status', '!=', 'cancelled');
+            })->count();
+
+            if (($currentlyReservedCount + count($requestedSeats)) > ($event->seats_total ?? 0)) {
+                $available = max(0, ($event->seats_total ?? 0) - $currentlyReservedCount);
+                throw ValidationException::withMessages([
+                    'seats' => 'Nie je dosť voľných miest. Zostáva ' . $available . ' miest.',
+                ]);
+            }
+
+            $order = new Order();
+            $order->event_id = $event->id;
+            $order->name = $validated['name'];
+            $order->email = $validated['email'];
+            $order->phone = $validated['phone'];
+            $order->status = 'pending';
+            $order->variable_symbol = (string) random_int(1000000000, 9999999999);
+//            $order->payment_note = 'VS' . $order->variable_symbol;
+            $order->url_slug = (string) Str::uuid();
+            $order->save();
+
+            $order->tickets()->sync(
+                $ticketAmounts->map(fn ($amount) => ['amount' => $amount])->all()
+            );
+
+            foreach ($requestedSeats as $index => $seatNumber) {
+                $reservation = new Reservation();
+                $reservation->order()->associate($order);
+                $reservation->seat_number = $seatNumber;
+                $reservation->guest_name = $guestNames[$index];
+                $reservation->save();
+            }
+
+            return $order;
+        });
 
         // Send confirmation email
         $this->sendOrderPendingEmail($order);
@@ -228,23 +265,6 @@ class OrderController extends Controller
         ]);
     }
 
-    public function confirm(Order $order)
-    {
-        return;
-        $order->update([
-            'status' => 'paid'
-        ]);
-
-        $order->reservations->each(function ($reservation) {
-            $reservation->qr_code = (string) Str::uuid();
-            $reservation->save();
-        });
-
-        $this->sendOrderConfirmationEmail($order);
-
-        return json_encode(['status' => 'success', 'message' => 'Order confirmed and email sent.']);
-    }
-
     /**
      * Confirm an order from the event management page
      */
@@ -260,6 +280,11 @@ class OrderController extends Controller
 
         if (!$hasAccess) {
             abort(403, 'Nemáte oprávnenie na správu tohto podujatia.');
+        }
+
+        // Only pending orders can be confirmed; reviving a cancelled order could double-book its seats
+        if ($order->status !== 'pending') {
+            return redirect()->back()->with('error', 'Potvrdiť je možné iba čakajúcu objednávku.');
         }
 
         // Update order status
@@ -296,6 +321,10 @@ class OrderController extends Controller
 
         if (!$hasAccess) {
             abort(403, 'Nemáte oprávnenie na správu tohto podujatia.');
+        }
+
+        if ($order->status === 'cancelled') {
+            return redirect()->back()->with('error', 'Objednávka už bola zrušená.');
         }
 
         // Update order status

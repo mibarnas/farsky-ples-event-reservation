@@ -87,6 +87,35 @@ class Event extends Model
         return 'url_slug';
     }
 
+    /**
+     * Whether the public can currently place orders: inside the registration
+     * window and before the event itself starts.
+     */
+    public function isRegistrationOpen(): bool
+    {
+        $now = now();
+
+        return $now->gte($this->registration_start)
+            && $now->lte($this->registration_end)
+            && $now->lt($this->start_time);
+    }
+
+    /**
+     * The user's role on this event: 'owner', 'manager', 'staff', or null when they have no access.
+     */
+    public function roleFor(?User $user): ?string
+    {
+        if (! $user) {
+            return null;
+        }
+
+        if ($this->user_id === $user->id) {
+            return 'owner';
+        }
+
+        return $this->users()->whereKey($user->id)->first()?->pivot->role;
+    }
+
     public function computeReservedSeats() {
         $totalReservedSeats = 0;
         foreach ($this->orders as $order) {

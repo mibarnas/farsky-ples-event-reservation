@@ -26,7 +26,6 @@ class EventFactory extends Factory
             'contact_name' => $this->faker->name(),
             'bank_account' => $this->faker->iban('SK'),
             'location_id' => Location::factory(),
-            'address' => $this->faker->address(),
         ];
     }
 }
