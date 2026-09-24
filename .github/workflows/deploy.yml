@@ -103,6 +103,9 @@ jobs:
           set -euo pipefail
           # Artisan runs as the web user so logs, compiled views and caches in storage/
           # stay owned by www-data.
+          # Drop the cached manifests first: they can still list providers of packages
+          # composer just removed (e.g. dev-only ones), and artisan cannot boot with them.
+          sudo -u www-data php -r 'foreach (glob("bootstrap/cache/*.php") as $f) unlink($f);'
           sudo -u www-data php artisan package:discover
           sudo -u www-data php artisan migrate --force
           sudo -u www-data php artisan optimize:clear
