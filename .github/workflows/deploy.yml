@@ -1,0 +1,92 @@
+name: deploy
+
+# Simple in-place deploy of the git checkout on the production box:
+#   1. `build`  — compiles the frontend on a GitHub-hosted runner. Kept off the server
+#                 because `npm run build` can trigger the OOM-killer on the shared 4 GB box.
+#   2. `deploy` — runs on the self-hosted runner on the server: git pull, composer install,
+#                 drop in the built assets, migrate, rebuild caches.
+#
+# The app lives in APP_DIR (a git clone owned by the runner user); override it with the
+# DEPLOY_APP_DIR repository variable. See "Deployment" in README.md for the one-time setup.
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.4'
+          tools: composer:v2
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: '22'
+
+      # The Vite build runs `php artisan wayfinder:generate`, so it needs a bootable app.
+      - name: Build assets
+        run: |
+          composer install --no-interaction --prefer-dist --no-progress
+          cp .env.example .env
+          php artisan key:generate
+          npm ci
+          npm run build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-assets
+          path: public/build
+          retention-days: 3
+          if-no-files-found: error
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, farsky]
+    env:
+      APP_DIR: ${{ vars.DEPLOY_APP_DIR || '/var/www/listky.farskyplesciernavoda.sk' }}
+
+    steps:
+      - name: Pull code and install dependencies
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # Token is passed inline, never stored in the checkout's git config.
+          git pull --ff-only "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "${GITHUB_REF_NAME}"
+          # --no-scripts: bootstrap/cache belongs to www-data, so package discovery runs below as www-data.
+          composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader --no-scripts
+          rm -rf public/build
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-assets
+          path: ${{ env.APP_DIR }}/public/build
+
+      - name: Migrate and rebuild caches
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -euo pipefail
+          # Artisan runs as the web user so logs, compiled views and caches in storage/
+          # stay owned by www-data.
+          sudo -u www-data php artisan package:discover
+          sudo -u www-data php artisan migrate --force
+          sudo -u www-data php artisan optimize:clear
+          sudo -u www-data php artisan optimize
+          sudo -u www-data php artisan queue:restart

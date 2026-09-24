@@ -274,7 +274,6 @@ const totalPages = computed(() => {
 });
 
 const openOrderDetails = (order: Order) => {
-    closeSeatChange();
     selectedOrder.value = order;
     isOrderDetailsOpen.value = true;
 };
@@ -364,51 +363,6 @@ const reservedSeatsMap = computed(() => {
 
 const page = usePage();
 const flash = computed(() => (page.props as any).flash as { success?: string; error?: string } | undefined);
-
-// Seat change (move to a free seat, or swap with the guest sitting there)
-const seatChangeReservationId = ref<number | null>(null);
-const seatChangeForm = useForm({
-    seat_number: '',
-});
-
-const openSeatChange = (reservation: Reservation) => {
-    seatChangeReservationId.value = reservation.id;
-    seatChangeForm.reset();
-    seatChangeForm.clearErrors();
-};
-
-const closeSeatChange = () => {
-    seatChangeReservationId.value = null;
-    seatChangeForm.reset();
-    seatChangeForm.clearErrors();
-};
-
-const seatChangeOccupant = computed(() => {
-    if (seatChangeForm.seat_number === '') return null;
-    const seat = Number(seatChangeForm.seat_number);
-    return allReservations.value.find(
-        res => res.seat_number === seat && res.id !== seatChangeReservationId.value
-    ) ?? null;
-});
-
-const submitSeatChange = (reservation: Reservation) => {
-    const occupant = seatChangeOccupant.value;
-    if (occupant && !confirm(
-        `Miesto ${seatChangeForm.seat_number} je obsadené hosťom ${occupant.guest_name}. Vymeniť miesta hostí ${reservation.guest_name} a ${occupant.guest_name}?`
-    )) {
-        return;
-    }
-
-    seatChangeForm.put(`/event/${props.event.url_slug}/reservation/${reservation.id}/seat`, {
-        preserveScroll: true,
-        onSuccess: () => {
-            closeSeatChange();
-            // Re-point the open dialog at the refreshed order from the reloaded props
-            const orderId = selectedOrder.value?.id;
-            selectedOrder.value = props.event.orders.find(o => o.id === orderId) ?? null;
-        },
-    });
-};
 </script>
 
 <template>
@@ -445,6 +399,14 @@ const submitSeatChange = (reservation: Reservation) => {
                         >
                             <TicketIcon class="w-4 h-4" />
                             Zobraziť podujatie
+                        </Link>
+                        <Link
+                            v-if="canManage"
+                            :href="`/event/${event.url_slug}/seats`"
+                            class="inline-flex items-center gap-2 rounded-lg border border-sidebar-border px-4 py-2 text-foreground transition-all hover:bg-muted"
+                        >
+                            <ArrowLeftRightIcon class="w-4 h-4" />
+                            Zmeniť miesta
                         </Link>
                         <Link
                             v-if="canManage"
@@ -985,73 +947,13 @@ const submitSeatChange = (reservation: Reservation) => {
                                 <div
                                     v-for="reservation in selectedOrder.reservations"
                                     :key="reservation.id"
-                                    class="p-3 rounded-lg bg-muted/50 border border-sidebar-border/50"
+                                    class="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-sidebar-border/50"
                                 >
-                                    <div class="flex items-center gap-3">
-                                        <UserIcon class="w-5 h-5 text-muted-foreground" />
-                                        <div class="flex-1">
-                                            <p class="font-medium">{{ reservation.guest_name }}</p>
-                                            <p class="text-sm text-muted-foreground">Sedadlo {{ reservation.seat_number }}</p>
-                                        </div>
-                                        <Button
-                                            v-if="canManage && selectedOrder.status !== 'cancelled' && seatChangeReservationId !== reservation.id"
-                                            @click="openSeatChange(reservation)"
-                                            variant="outline"
-                                            size="sm"
-                                            class="h-8 px-2 text-xs cursor-pointer"
-                                            title="Presunúť hosťa alebo vymeniť miesta"
-                                        >
-                                            <ArrowLeftRightIcon class="w-3.5 h-3.5 mr-1" />
-                                            Zmeniť miesto
-                                        </Button>
+                                    <UserIcon class="w-5 h-5 text-muted-foreground" />
+                                    <div class="flex-1">
+                                        <p class="font-medium">{{ reservation.guest_name }}</p>
+                                        <p class="text-sm text-muted-foreground">Sedadlo {{ reservation.seat_number }}</p>
                                     </div>
-
-                                    <form
-                                        v-if="seatChangeReservationId === reservation.id"
-                                        class="mt-3 space-y-2 border-t border-sidebar-border/50 pt-3"
-                                        @submit.prevent="submitSeatChange(reservation)"
-                                    >
-                                        <Label :for="`seat-change-${reservation.id}`">Nové miesto</Label>
-                                        <Input
-                                            :id="`seat-change-${reservation.id}`"
-                                            v-model="seatChangeForm.seat_number"
-                                            type="number"
-                                            min="0"
-                                            placeholder="Číslo miesta"
-                                            :class="{ 'border-red-500': seatChangeForm.errors.seat_number }"
-                                        />
-                                        <p v-if="seatChangeForm.errors.seat_number" class="text-sm text-red-500">
-                                            {{ seatChangeForm.errors.seat_number }}
-                                        </p>
-                                        <p v-else-if="seatChangeForm.seat_number !== '' && Number(seatChangeForm.seat_number) === reservation.seat_number" class="text-sm text-muted-foreground">
-                                            Hosť už sedí na tomto mieste.
-                                        </p>
-                                        <p v-else-if="seatChangeOccupant" class="text-sm text-amber-700 dark:text-amber-400">
-                                            Obsadené: {{ seatChangeOccupant.guest_name }} – hostia si vymenia miesta.
-                                        </p>
-                                        <p v-else-if="seatChangeForm.seat_number !== ''" class="text-sm text-green-700 dark:text-green-400">
-                                            Miesto je voľné – hosť bude presunutý.
-                                        </p>
-                                        <div class="flex justify-end gap-2">
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                class="cursor-pointer"
-                                                @click="closeSeatChange"
-                                            >
-                                                Zrušiť
-                                            </Button>
-                                            <Button
-                                                type="submit"
-                                                size="sm"
-                                                class="cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
-                                                :disabled="seatChangeForm.processing || seatChangeForm.seat_number === '' || Number(seatChangeForm.seat_number) === reservation.seat_number"
-                                            >
-                                                {{ seatChangeOccupant ? 'Vymeniť' : 'Presunúť' }}
-                                            </Button>
-                                        </div>
-                                    </form>
                                 </div>
                             </div>
                         </div>

@@ -47,6 +47,30 @@ class ReservationSeatChangeTest extends TestCase
             ]), ['seat_number' => $seat]);
     }
 
+    public function test_owner_can_open_seat_management_page()
+    {
+        $this->reserve($this->event, 5);
+        $this->reserve($this->event, 6, 'cancelled');
+
+        $this->actingAs($this->event->user)
+            ->get(route('event.seats', $this->event->url_slug))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('event/Seats')
+                ->has('reservations', 1)
+                ->where('reservations.0.seat_number', 5));
+    }
+
+    public function test_staff_cannot_open_seat_management_page()
+    {
+        $staff = User::factory()->create();
+        $this->event->users()->attach($staff->id, ['role' => 'staff']);
+
+        $this->actingAs($staff)
+            ->get(route('event.seats', $this->event->url_slug))
+            ->assertForbidden();
+    }
+
     public function test_guest_can_be_moved_to_a_free_seat()
     {
         $reservation = $this->reserve($this->event, 5);

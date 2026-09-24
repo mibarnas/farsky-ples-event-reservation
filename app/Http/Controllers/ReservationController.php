@@ -107,6 +107,38 @@ class ReservationController extends Controller
     }
 
     /**
+     * Seat management page: the seat map with all active reservations, used to
+     * move guests to free seats or swap two guests.
+     */
+    public function seats(Request $request, Event $event)
+    {
+        if (! in_array($event->roleFor($request->user()), ['owner', 'manager'], true)) {
+            abort(403, 'Nemáte oprávnenie na zmenu miest.');
+        }
+
+        $reservations = Reservation::with('order')
+            ->whereHas('order', function ($query) use ($event) {
+                $query->where('event_id', $event->id)
+                      ->where('status', '!=', 'cancelled');
+            })
+            ->orderBy('seat_number')
+            ->get()
+            ->map(fn (Reservation $reservation) => [
+                'id' => $reservation->id,
+                'seat_number' => $reservation->seat_number,
+                'guest_name' => $reservation->guest_name,
+                'order_name' => $reservation->order->name,
+                'order_status' => $reservation->order->status,
+            ]);
+
+        return Inertia::render('event/Seats', [
+            'event' => $event->only(['id', 'title', 'url_slug', 'seats_total']),
+            'svgMap' => $event->location?->svg_map,
+            'reservations' => $reservations,
+        ]);
+    }
+
+    /**
      * Move a guest to another seat. If an active reservation already holds the
      * target seat, the two guests swap seats.
      */

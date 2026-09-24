@@ -69,6 +69,7 @@ Route::post('order/{order:url_slug}/cancel', [OrderController::class, 'cancelOrd
 
 // Reservation QR code scanning routes (for staff members)
 Route::get('reservation/{qrCode}', [ReservationController::class, 'show'])->middleware(['auth', 'verified'])->name('reservation.show');
+Route::get('event/{event:url_slug}/seats', [ReservationController::class, 'seats'])->middleware(['auth', 'verified'])->name('event.seats');
 Route::put('event/{event:url_slug}/reservation/{reservation}/seat', [ReservationController::class, 'changeSeat'])->middleware(['auth', 'verified'])->name('reservation.change-seat');
 
 // CSV import routes
