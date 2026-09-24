@@ -9,6 +9,9 @@ use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Validator as ValidatorInstance;
 
 class EventController extends Controller
 {
@@ -17,10 +20,8 @@ class EventController extends Controller
      */
     public function create()
     {
-        $locations = Location::select('id', 'address', 'places_total')->get();
-
         return Inertia::render('EventCreate', [
-            'locations' => $locations,
+            'locations' => $this->locationsWithSeats(),
         ]);
     }
 
@@ -29,7 +30,7 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'url_slug' => 'required|string|max:255|unique:events,url_slug',
             'description' => 'nullable|string',
@@ -46,7 +47,21 @@ class EventController extends Controller
             'background_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'overline' => 'nullable|string|max:255',
+            'tickets' => 'nullable|array',
+            'tickets.*.title' => 'required|string|max:255',
+            'tickets.*.price' => 'required|numeric|min:0',
+            'tickets.*.reservations' => 'required|integer|min:1',
+            ...$this->tableRules(),
         ]);
+
+        $validator->after(function (ValidatorInstance $validator) use ($request) {
+            $location = Location::find($request->input('location_id'));
+            if ($location) {
+                $this->validateTableSeats($validator, $request, $location);
+            }
+        });
+
+        $validated = $validator->validate();
 
         // If seats_total is not provided, infer it from the location
         if (empty($validated['seats_total'])) {
@@ -66,28 +81,40 @@ class EventController extends Controller
             $logoPath = $request->file('logo')->store('events/logos', 'public');
         }
 
-        $event = Event::create([
-            'user_id' => $request->user()->id,
-            'title' => $validated['title'],
-            'url_slug' => $validated['url_slug'],
-            'description' => $validated['description'] ?? null,
-            'start_time' => $validated['start_time'],
-            'registration_start' => $validated['registration_start'],
-            'registration_end' => $validated['registration_end'],
-            'seats_total' => $validated['seats_total'],
-            'location_id' => $validated['location_id'],
-            'contact_name' => $validated['contact_name'],
-            'contact_email' => $validated['contact_email'],
-            'contact_phone' => $validated['contact_phone'] ?? null,
-            'bank_account' => $validated['bank_account'],
-            'multiple_reservations_per_ticket' => $validated['multiple_reservations_per_ticket'] ?? false,
-            'background_image_path' => $backgroundImagePath,
-            'logo_image_path' => $logoPath,
-            'overline' => $validated['overline'] ?? null,
-        ]);
+        $event = DB::transaction(function () use ($request, $validated, $backgroundImagePath, $logoPath) {
+            $event = Event::create([
+                'user_id' => $request->user()->id,
+                'title' => $validated['title'],
+                'url_slug' => $validated['url_slug'],
+                'description' => $validated['description'] ?? null,
+                'start_time' => $validated['start_time'],
+                'registration_start' => $validated['registration_start'],
+                'registration_end' => $validated['registration_end'],
+                'seats_total' => $validated['seats_total'],
+                'location_id' => $validated['location_id'],
+                'contact_name' => $validated['contact_name'],
+                'contact_email' => $validated['contact_email'],
+                'contact_phone' => $validated['contact_phone'] ?? null,
+                'bank_account' => $validated['bank_account'],
+                'multiple_reservations_per_ticket' => $validated['multiple_reservations_per_ticket'] ?? false,
+                'background_image_path' => $backgroundImagePath,
+                'logo_image_path' => $logoPath,
+                'overline' => $validated['overline'] ?? null,
+                'additional_information' => $this->buildAdditionalInformation(null, $request),
+            ]);
 
+            foreach ($validated['tickets'] ?? [] as $ticket) {
+                $event->tickets()->create([
+                    'title' => $ticket['title'],
+                    'price' => $ticket['price'],
+                    'reservations' => $ticket['reservations'],
+                ]);
+            }
 
-        return redirect()->route('event.show', $event->url_slug)
+            return $event;
+        });
+
+        return redirect()->route('event.manage', $event->url_slug)
             ->with('success', 'Podujatie bolo úspešne vytvorené!');
     }
 
@@ -203,11 +230,10 @@ class EventController extends Controller
             abort(403, 'Nemáte oprávnenie na úpravu tohto podujatia.');
         }
 
-        $locations = Location::select('id', 'address', 'places_total')->get();
-
         return Inertia::render('EventEdit', [
             'event' => $event,
-            'locations' => $locations,
+            'locations' => $this->locationsWithSeats(),
+            'tables' => $event->tableSetup(),
         ]);
     }
 
@@ -227,7 +253,7 @@ class EventController extends Controller
             abort(403, 'Nemáte oprávnenie na úpravu tohto podujatia.');
         }
 
-        $validated = $request->validate([
+        $validator = Validator::make($request->all(), [
             'title' => 'required|string|max:255',
             'url_slug' => 'required|string|max:255|unique:events,url_slug,' . $event->id,
             'description' => 'nullable|string',
@@ -244,7 +270,16 @@ class EventController extends Controller
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,webp,svg|max:2048',
             'remove_logo' => 'boolean',
             'overline' => 'nullable|string|max:255',
+            ...$this->tableRules(),
         ]);
+
+        $validator->after(function (ValidatorInstance $validator) use ($request, $event) {
+            if ($request->has('tables_enabled')) {
+                $this->validateTableSeats($validator, $request, $event->location);
+            }
+        });
+
+        $validated = $validator->validate();
 
         // Handle background image upload
         $backgroundImagePath = $event->background_image_path;
@@ -301,6 +336,10 @@ class EventController extends Controller
             'background_image_path' => $backgroundImagePath,
             'logo_image_path' => $logoPath,
             'overline' => $validated['overline'] ?? null,
+            // Older clients that don't send tables_enabled leave the table setup untouched.
+            'additional_information' => $request->has('tables_enabled')
+                ? $this->buildAdditionalInformation($event->additional_information, $request)
+                : $event->additional_information,
         ]);
 
         return redirect()->route('event.manage', $event->url_slug)
@@ -340,5 +379,92 @@ class EventController extends Controller
             'tickets' => $tickets,
             'places_left' => $event->seats_total - $totalReservedSeats,
         ]);
+    }
+
+    /**
+     * Locations for the create/edit forms, with the seat numbers of their SVG map
+     * so the table editor can show the map and validate seat assignments.
+     */
+    private function locationsWithSeats()
+    {
+        return Location::select('id', 'address', 'places_total', 'svg_map')->get()
+            ->map(fn (Location $location) => [
+                'id' => $location->id,
+                'address' => $location->address,
+                'places_total' => $location->places_total,
+                'svg_map' => $location->svg_map,
+                'valid_seats' => $location->seatNumbers(),
+            ]);
+    }
+
+    /**
+     * Validation rules for the table setup (stored in additional_information, read by TablesPlugin).
+     */
+    private function tableRules(): array
+    {
+        return [
+            'tables_enabled' => 'boolean',
+            'tables' => 'nullable|array',
+            'tables.*.name' => 'required|string|max:255|distinct',
+            'tables.*.seats' => 'required|array|min:1',
+            'tables.*.seats.*' => 'integer|min:0',
+        ];
+    }
+
+    /**
+     * Reject seats shared by several tables and seats that don't exist on the location's map.
+     */
+    private function validateTableSeats(ValidatorInstance $validator, Request $request, ?Location $location): void
+    {
+        if (! $request->boolean('tables_enabled') || $validator->errors()->isNotEmpty()) {
+            return;
+        }
+
+        $validSeats = $location?->seatNumbers();
+        $owners = [];
+
+        foreach ((array) $request->input('tables', []) as $index => $table) {
+            foreach ((array) ($table['seats'] ?? []) as $seat) {
+                $seat = (int) $seat;
+
+                if (isset($owners[$seat]) && $owners[$seat] !== $index) {
+                    $validator->errors()->add("tables.$index.seats", "Miesto $seat je už priradené k stolu „{$request->input("tables.{$owners[$seat]}.name")}“.");
+                    continue;
+                }
+                $owners[$seat] = $index;
+
+                if ($validSeats !== null && ! in_array($seat, $validSeats, true)) {
+                    $validator->errors()->add("tables.$index.seats", "Miesto $seat na mape sedenia neexistuje.");
+                }
+            }
+        }
+    }
+
+    /**
+     * Merge the submitted tables into the event's additional_information JSON,
+     * keeping any other keys that may be stored there.
+     */
+    private function buildAdditionalInformation(?string $existing, Request $request): ?string
+    {
+        $config = json_decode((string) $existing, true) ?: [];
+        unset($config['tables']);
+
+        if ($request->boolean('tables_enabled')) {
+            $tables = collect((array) $request->input('tables', []))
+                ->map(function ($table) {
+                    $seats = array_values(array_unique(array_map('intval', (array) $table['seats'])));
+                    sort($seats);
+
+                    return ['name' => trim($table['name']), 'seats' => $seats];
+                })
+                ->values()
+                ->all();
+
+            if (! empty($tables)) {
+                $config['tables'] = $tables;
+            }
+        }
+
+        return empty($config) ? null : json_encode($config, JSON_UNESCAPED_UNICODE);
     }
 }

@@ -35,6 +35,7 @@ class Event extends Model
         'background_image_path',
         'logo_image_path',
         'overline',
+        'additional_information',
     ];
 
     protected $casts = [
@@ -45,6 +46,17 @@ class Event extends Model
         'user_id' => 'integer',
         'location_id' => 'integer',
     ];
+
+    /**
+     * The table setup ({"name", "seats"} entries) stored in additional_information,
+     * read by TablesPlugin and used to label tables on the seat map.
+     *
+     * @return list<array{name: string, seats: list<int>}>
+     */
+    public function tableSetup(): array
+    {
+        return json_decode((string) $this->additional_information, true)['tables'] ?? [];
+    }
 
     public function user(): BelongsTo
     {

@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import type { EventTable } from '@/lib/seatRanges';
+import { drawTableLabels } from '@/lib/tableLabels';
 import { nextTick, onMounted, ref, watch } from 'vue';
 
 // Renders a location's SVG seat map and colours each `circle.seat` via `colors`.
 // Seat numbers are resolved like SeatSelector.vue: data-seat, falling back to DOM order.
+// Table names are drawn from the event's `tables` setup, not from the SVG.
 const props = defineProps<{
     src: string;
     colors: Record<number, string>;
     defaultColor?: string;
+    tables?: EventTable[];
 }>();
 
 const emit = defineEmits<{
@@ -27,6 +31,14 @@ function paint() {
         node.style.cursor = 'pointer';
         node.style.transition = 'fill 0.15s';
     });
+}
+
+function labelTables() {
+    drawTableLabels(
+        containerRef.value,
+        new Map(seatNodes.map(({ node, seat }) => [seat, node])),
+        props.tables,
+    );
 }
 
 function seatFromEvent(e: Event): number | null {
@@ -57,6 +69,7 @@ async function load() {
             return { node, seat: Number.isFinite(parsed) ? parsed : i };
         });
         paint();
+        labelTables();
     } catch (e) {
         console.error(e);
         loadError.value = true;
@@ -66,6 +79,7 @@ async function load() {
 onMounted(load);
 watch(() => props.src, load);
 watch(() => props.colors, paint, { deep: true });
+watch(() => props.tables, labelTables, { deep: true });
 </script>
 
 <template>

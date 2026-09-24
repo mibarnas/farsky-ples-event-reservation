@@ -66,6 +66,7 @@ class OrderController extends Controller
                 'reservations' => $reservedSeatNumbers,
                 'seat_names' => $seatNames,
                 'location' => optional($event->location)->svg_map,
+                'tables' => $event->tableSetup(),
             ]),
             'location' => $event->location,
             'tickets' => $event->tickets,

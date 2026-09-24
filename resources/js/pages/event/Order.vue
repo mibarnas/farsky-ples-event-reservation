@@ -12,6 +12,7 @@ import SeatSelector from '@/components/order/SeatSelector.vue';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import OrderController from '@/actions/App/Http/Controllers/OrderController';
 import EventCard from '@/components/order/EventCard.vue';
+import type { EventTable } from '@/lib/seatRanges';
 
 // import { create } from '@/routes/reservation';
 
@@ -34,6 +35,7 @@ interface Event {
     location: string;
     reservations: number[];
     seat_names?: Record<number, string>;
+    tables?: EventTable[];
     multiple_reservations_per_ticket: boolean;
 }
 
@@ -437,6 +439,7 @@ const validateStepOne = () => {
                         seat-selector="circle.seat"
                         :reserved-seats="props.event.reservations"
                         :seat-names="props.event.seat_names"
+                        :tables="props.event.tables"
                         :max-selected="maxSelectableSeats"
                     />
                 </div>

@@ -4,6 +4,7 @@ import SeatMap from '@/components/SeatMap.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { EventTable } from '@/lib/seatRanges';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
 import { ArrowLeftRightIcon, ArrowRightIcon, SearchIcon, XIcon } from 'lucide-vue-next';
@@ -20,6 +21,7 @@ interface SeatReservation {
 const props = defineProps<{
     event: { id: number; title: string; url_slug: string; seats_total: number };
     svgMap: string | null;
+    tables: EventTable[];
     reservations: SeatReservation[];
 }>();
 
@@ -173,6 +175,7 @@ function submit() {
                         :src="svgMap"
                         :colors="seatColors"
                         :default-color="COLORS.free"
+                        :tables="tables"
                         @seat-click="onSeatClick"
                         @seat-hover="hoveredSeat = $event"
                     />

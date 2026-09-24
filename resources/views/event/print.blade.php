@@ -273,6 +273,8 @@
                                 $circle->setAttribute('stroke-width', '2');
                             }
 
+                            \App\Support\TableLabels::draw($dom, $event->tableSetup());
+
                             echo $dom->saveHTML();
                         } else {
                             echo '<p style="color: #666;">SVG mapa sa nepodarila načítať.</p>';

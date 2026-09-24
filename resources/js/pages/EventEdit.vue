@@ -1,17 +1,29 @@
 <script setup lang="ts">
-import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import PageTabs from '@/components/PageTabs.vue';
+import TableEditor from '@/components/event/TableEditor.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { computed } from 'vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import type { EventTable } from '@/lib/seatRanges';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
+import {
+    ArmchairIcon,
+    CalendarIcon,
+    ImageIcon,
+    InfoIcon,
+    WalletIcon,
+} from 'lucide-vue-next';
+import { computed, nextTick, ref } from 'vue';
 
 interface Location {
     id: number;
     address: string;
     places_total: number;
+    svg_map: string | null;
+    valid_seats: number[] | null;
 }
 
 interface Event {
@@ -37,6 +49,7 @@ interface Event {
 const props = defineProps<{
     event: Event;
     locations: Location[];
+    tables: EventTable[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -78,14 +91,130 @@ const form = useForm({
     contact_email: props.event.contact_email,
     contact_phone: props.event.contact_phone || '',
     bank_account: props.event.bank_account,
-    multiple_reservations_per_ticket: props.event.multiple_reservations_per_ticket,
+    multiple_reservations_per_ticket:
+        props.event.multiple_reservations_per_ticket,
     overline: props.event.overline || '',
     background_image: null as File | null,
     remove_background_image: false,
     logo: null as File | null,
     remove_logo: false,
+    tables_enabled: props.tables.length > 0,
+    tables: props.tables as EventTable[],
     _method: 'PUT',
 });
+
+const eventLocation = computed(
+    () => props.locations.find((l) => l.id === props.event.location_id) ?? null,
+);
+
+// Submissions without files go through router.post, whose errors land in page props.
+const page = usePage();
+
+// ---- Tabs ----
+const TABS = [
+    {
+        key: 'basics',
+        title: 'Základné info',
+        icon: InfoIcon,
+        fields: ['title', 'overline', 'url_slug', 'description'],
+    },
+    {
+        key: 'schedule',
+        title: 'Termíny a miesto',
+        icon: CalendarIcon,
+        fields: [
+            'start_time',
+            'registration_start',
+            'registration_end',
+            'location_id',
+            'seats_total',
+            'multiple_reservations_per_ticket',
+        ],
+    },
+    {
+        key: 'tables',
+        title: 'Stoly',
+        icon: ArmchairIcon,
+        fields: ['tables_enabled', 'tables'],
+    },
+    {
+        key: 'contact',
+        title: 'Kontakt a platba',
+        icon: WalletIcon,
+        fields: [
+            'contact_name',
+            'contact_email',
+            'contact_phone',
+            'bank_account',
+        ],
+    },
+    {
+        key: 'appearance',
+        title: 'Vzhľad',
+        icon: ImageIcon,
+        fields: [
+            'background_image',
+            'remove_background_image',
+            'logo',
+            'remove_logo',
+        ],
+    },
+] as const;
+
+type TabKey = (typeof TABS)[number]['key'];
+
+const activeTab = ref<TabKey>('basics');
+
+const tabForField = (field: string): TabKey | undefined =>
+    TABS.find((tab) =>
+        tab.fields.some((f) => field === f || field.startsWith(`${f}.`)),
+    )?.key;
+
+const allErrors = computed(
+    () =>
+        ({
+            ...(page.props.errors as Record<string, string>),
+            ...form.errors,
+        }) as Record<string, string>,
+);
+
+const tableErrors = computed(() =>
+    Object.fromEntries(
+        Object.entries(allErrors.value).filter(([key]) =>
+            key.startsWith('tables'),
+        ),
+    ),
+);
+
+const tabsWithErrors = computed(
+    () =>
+        new Set(Object.keys(allErrors.value).map(tabForField).filter(Boolean)),
+);
+
+// After a failed save, show the first tab with an error unless the current one has some.
+const showErrorTab = (errors: Record<string, string>) => {
+    const tabs = Object.keys(errors).map(tabForField);
+    if (tabs.includes(activeTab.value)) return;
+    const first = TABS.find((tab) => tabs.includes(tab.key));
+    if (first) activeTab.value = first.key;
+};
+
+// Browser validation can't point at a field on a hidden tab, so open its tab first.
+// One validation pass fires `invalid` for every bad field; only the first one counts.
+let handlingInvalid = false;
+const onInvalid = (e: globalThis.Event) => {
+    if (handlingInvalid) return;
+    handlingInvalid = true;
+    setTimeout(() => (handlingInvalid = false));
+
+    const field = e.target as HTMLInputElement;
+    const tab = field.closest<HTMLElement>('[data-tab]')?.dataset.tab as
+        | TabKey
+        | undefined;
+    if (!tab || tab === activeTab.value) return;
+    activeTab.value = tab;
+    nextTick(() => field.reportValidity());
+};
 
 const generateSlug = () => {
     if (form.title) {
@@ -118,7 +247,9 @@ const removeBackgroundImage = () => {
     form.background_image = null;
     form.remove_background_image = true;
     // Reset the actual file input element
-    const fileInput = document.getElementById('background_image') as HTMLInputElement;
+    const fileInput = document.getElementById(
+        'background_image',
+    ) as HTMLInputElement;
     if (fileInput) {
         fileInput.value = '';
     }
@@ -151,32 +282,56 @@ const previewLogoUrl = computed(() => {
 const submit = () => {
     // If files are selected, use forceFormData to handle multipart/form-data
     if (form.background_image || form.logo) {
-        form.post(`/event/${props.event.url_slug}`, {
+        form.transform((data) => ({
+            ...data,
+            tables: data.tables_enabled ? data.tables : [],
+        })).post(`/event/${props.event.url_slug}`, {
             preserveScroll: true,
             forceFormData: true,
             onSuccess: () => {
                 // Reset file inputs on success
                 form.background_image = null;
                 form.logo = null;
-                const bgInput = document.getElementById('background_image') as HTMLInputElement;
-                const logoInput = document.getElementById('logo') as HTMLInputElement;
+                const bgInput = document.getElementById(
+                    'background_image',
+                ) as HTMLInputElement;
+                const logoInput = document.getElementById(
+                    'logo',
+                ) as HTMLInputElement;
                 if (bgInput) bgInput.value = '';
                 if (logoInput) logoInput.value = '';
             },
+            onError: showErrorTab,
         });
     } else {
         // No files, just submit as regular form data
-        const { background_image: _, logo: __, ...formDataWithoutFiles } = form.data();
+        const {
+            background_image: _,
+            logo: __,
+            ...formDataWithoutFiles
+        } = form.data();
 
-        router.post(`/event/${props.event.url_slug}`, formDataWithoutFiles, {
-            preserveScroll: true,
-            onSuccess: () => {
-                const bgInput = document.getElementById('background_image') as HTMLInputElement;
-                const logoInput = document.getElementById('logo') as HTMLInputElement;
-                if (bgInput) bgInput.value = '';
-                if (logoInput) logoInput.value = '';
+        router.post(
+            `/event/${props.event.url_slug}`,
+            {
+                ...formDataWithoutFiles,
+                tables: form.tables_enabled ? form.tables : [],
             },
-        });
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    const bgInput = document.getElementById(
+                        'background_image',
+                    ) as HTMLInputElement;
+                    const logoInput = document.getElementById(
+                        'logo',
+                    ) as HTMLInputElement;
+                    if (bgInput) bgInput.value = '';
+                    if (logoInput) logoInput.value = '';
+                },
+                onError: showErrorTab,
+            },
+        );
     }
 };
 </script>
@@ -186,24 +341,53 @@ const submit = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex h-full flex-1 flex-col gap-4 rounded-xl p-4">
-            <div class="rounded-xl border border-sidebar-border/70 dark:border-sidebar-border p-6">
-                <h1 class="text-3xl font-bold mb-6">Upraviť podujatie</h1>
+            <div
+                class="rounded-xl border border-sidebar-border/70 p-6 dark:border-sidebar-border"
+            >
+                <h1 class="mb-6 text-3xl font-bold">Upraviť podujatie</h1>
 
-                <form @submit.prevent="submit" class="space-y-6">
+                <PageTabs
+                    v-model="activeTab"
+                    :tabs="
+                        TABS.map((tab) => ({
+                            ...tab,
+                            alert: tabsWithErrors.has(tab.key),
+                        }))
+                    "
+                    label="Nastavenia podujatia"
+                    class="-mx-6 mb-6 px-6"
+                />
+
+                <form
+                    @submit.prevent="submit"
+                    @invalid.capture="onInvalid"
+                    class="space-y-6"
+                >
                     <!-- Basic Information -->
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-semibold">Základné informácie</h2>
-
+                    <div
+                        v-show="activeTab === 'basics'"
+                        data-tab="basics"
+                        role="tabpanel"
+                        class="space-y-4"
+                    >
                         <div class="space-y-2">
                             <Label for="overline">Nadpis (Overline)</Label>
                             <Input
                                 id="overline"
                                 v-model="form.overline"
                                 placeholder="Sekundárny nadpis nad hlavným názvom"
-                                :class="{ 'border-red-500': form.errors.overline }"
+                                :class="{
+                                    'border-red-500': form.errors.overline,
+                                }"
                             />
-                            <p class="text-xs text-gray-500">Voliteľný text, ktorý sa zobrazí nad hlavným názvom podujatia</p>
-                            <p v-if="form.errors.overline" class="text-sm text-red-500">
+                            <p class="text-xs text-gray-500">
+                                Voliteľný text, ktorý sa zobrazí nad hlavným
+                                názvom podujatia
+                            </p>
+                            <p
+                                v-if="form.errors.overline"
+                                class="text-sm text-red-500"
+                            >
                                 {{ form.errors.overline }}
                             </p>
                         </div>
@@ -216,9 +400,14 @@ const submit = () => {
                                     v-model="form.title"
                                     @blur="generateSlug"
                                     required
-                                    :class="{ 'border-red-500': form.errors.title }"
+                                    :class="{
+                                        'border-red-500': form.errors.title,
+                                    }"
                                 />
-                                <p v-if="form.errors.title" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.title"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.title }}
                                 </p>
                             </div>
@@ -229,9 +418,14 @@ const submit = () => {
                                     id="url_slug"
                                     v-model="form.url_slug"
                                     required
-                                    :class="{ 'border-red-500': form.errors.url_slug }"
+                                    :class="{
+                                        'border-red-500': form.errors.url_slug,
+                                    }"
                                 />
-                                <p v-if="form.errors.url_slug" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.url_slug"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.url_slug }}
                                 </p>
                             </div>
@@ -244,45 +438,71 @@ const submit = () => {
                                 v-model="form.description"
                                 rows="4"
                                 show-markdown
-                                :class="form.errors.description ? 'border-red-500' : ''"
+                                :class="
+                                    form.errors.description
+                                        ? 'border-red-500'
+                                        : ''
+                                "
                             />
-                            <p v-if="form.errors.description" class="text-sm text-red-500">
+                            <p
+                                v-if="form.errors.description"
+                                class="text-sm text-red-500"
+                            >
                                 {{ form.errors.description }}
                             </p>
                         </div>
                     </div>
 
-                    <!-- Event Details -->
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-semibold">Detaily podujatia</h2>
-
+                    <!-- Schedule & venue -->
+                    <div
+                        v-show="activeTab === 'schedule'"
+                        data-tab="schedule"
+                        role="tabpanel"
+                        class="space-y-4"
+                    >
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-2">
-                                <Label for="start_time">Začiatok podujatia *</Label>
+                                <Label for="start_time"
+                                    >Začiatok podujatia *</Label
+                                >
                                 <Input
                                     id="start_time"
                                     v-model="form.start_time"
                                     type="datetime-local"
                                     required
-                                    :class="{ 'border-red-500': form.errors.start_time }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.start_time,
+                                    }"
                                 />
-                                <p v-if="form.errors.start_time" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.start_time"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.start_time }}
                                 </p>
                             </div>
 
                             <div class="space-y-2">
-                                <Label for="seats_total">Celkový počet miest</Label>
+                                <Label for="seats_total"
+                                    >Celkový počet miest</Label
+                                >
                                 <Input
                                     id="seats_total"
                                     v-model="form.seats_total"
                                     type="number"
                                     min="1"
                                     disabled
-                                    :class="{ 'border-red-500': form.errors.seats_total }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.seats_total,
+                                    }"
                                     placeholder="Automaticky z lokality"
                                 />
-                                <p v-if="form.errors.seats_total" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.seats_total"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.seats_total }}
                                 </p>
                             </div>
@@ -290,29 +510,45 @@ const submit = () => {
 
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-2">
-                                <Label for="registration_start">Začiatok registrácie *</Label>
+                                <Label for="registration_start"
+                                    >Začiatok registrácie *</Label
+                                >
                                 <Input
                                     id="registration_start"
                                     v-model="form.registration_start"
                                     type="datetime-local"
                                     required
-                                    :class="{ 'border-red-500': form.errors.registration_start }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.registration_start,
+                                    }"
                                 />
-                                <p v-if="form.errors.registration_start" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.registration_start"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.registration_start }}
                                 </p>
                             </div>
 
                             <div class="space-y-2">
-                                <Label for="registration_end">Koniec registrácie *</Label>
+                                <Label for="registration_end"
+                                    >Koniec registrácie *</Label
+                                >
                                 <Input
                                     id="registration_end"
                                     v-model="form.registration_end"
                                     type="datetime-local"
                                     required
-                                    :class="{ 'border-red-500': form.errors.registration_end }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.registration_end,
+                                    }"
                                 />
-                                <p v-if="form.errors.registration_end" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.registration_end"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.registration_end }}
                                 </p>
                             </div>
@@ -326,8 +562,11 @@ const submit = () => {
                                 required
                                 disabled
                                 :class="[
-                                    'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                                    { 'border-red-500': form.errors.location_id }
+                                    'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+                                    {
+                                        'border-red-500':
+                                            form.errors.location_id,
+                                    },
                                 ]"
                             >
                                 <option value="">Vyberte lokalitu</option>
@@ -336,10 +575,16 @@ const submit = () => {
                                     :key="location.id"
                                     :value="location.id"
                                 >
-                                    {{ location.address }} ({{ location.places_total }} miest)
+                                    {{ location.address }} ({{
+                                        location.places_total
+                                    }}
+                                    miest)
                                 </option>
                             </select>
-                            <p v-if="form.errors.location_id" class="text-sm text-red-500">
+                            <p
+                                v-if="form.errors.location_id"
+                                class="text-sm text-red-500"
+                            >
                                 {{ form.errors.location_id }}
                             </p>
                         </div>
@@ -351,40 +596,78 @@ const submit = () => {
                                 type="checkbox"
                                 class="h-4 w-4 rounded border-gray-300"
                             />
-                            <Label for="multiple_reservations" class="cursor-pointer font-normal">
+                            <Label
+                                for="multiple_reservations"
+                                class="cursor-pointer font-normal"
+                            >
                                 Povoliť viacero rezervácií na jeden lístok
                             </Label>
                         </div>
                     </div>
 
-                    <!-- Contact Information -->
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-semibold">Kontaktné informácie</h2>
+                    <!-- Tables -->
+                    <div
+                        v-show="activeTab === 'tables'"
+                        data-tab="tables"
+                        role="tabpanel"
+                        class="space-y-4"
+                    >
+                        <TableEditor
+                            v-model:enabled="form.tables_enabled"
+                            v-model:tables="form.tables"
+                            :svg-map="eventLocation?.svg_map"
+                            :valid-seats="eventLocation?.valid_seats"
+                            :errors="tableErrors"
+                        />
+                    </div>
 
+                    <!-- Contact Information -->
+                    <div
+                        v-show="activeTab === 'contact'"
+                        data-tab="contact"
+                        role="tabpanel"
+                        class="space-y-4"
+                    >
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-2">
-                                <Label for="contact_name">Kontaktné meno *</Label>
+                                <Label for="contact_name"
+                                    >Kontaktné meno *</Label
+                                >
                                 <Input
                                     id="contact_name"
                                     v-model="form.contact_name"
                                     required
-                                    :class="{ 'border-red-500': form.errors.contact_name }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.contact_name,
+                                    }"
                                 />
-                                <p v-if="form.errors.contact_name" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.contact_name"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.contact_name }}
                                 </p>
                             </div>
 
                             <div class="space-y-2">
-                                <Label for="contact_email">Kontaktný email *</Label>
+                                <Label for="contact_email"
+                                    >Kontaktný email *</Label
+                                >
                                 <Input
                                     id="contact_email"
                                     v-model="form.contact_email"
                                     type="email"
                                     required
-                                    :class="{ 'border-red-500': form.errors.contact_email }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.contact_email,
+                                    }"
                                 />
-                                <p v-if="form.errors.contact_email" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.contact_email"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.contact_email }}
                                 </p>
                             </div>
@@ -392,14 +675,22 @@ const submit = () => {
 
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="space-y-2">
-                                <Label for="contact_phone">Kontaktný telefón</Label>
+                                <Label for="contact_phone"
+                                    >Kontaktný telefón</Label
+                                >
                                 <Input
                                     id="contact_phone"
                                     v-model="form.contact_phone"
                                     type="tel"
-                                    :class="{ 'border-red-500': form.errors.contact_phone }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.contact_phone,
+                                    }"
                                 />
-                                <p v-if="form.errors.contact_phone" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.contact_phone"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.contact_phone }}
                                 </p>
                             </div>
@@ -410,174 +701,251 @@ const submit = () => {
                                     id="bank_account"
                                     v-model="form.bank_account"
                                     required
-                                    :class="{ 'border-red-500': form.errors.bank_account }"
+                                    :class="{
+                                        'border-red-500':
+                                            form.errors.bank_account,
+                                    }"
                                 />
-                                <p v-if="form.errors.bank_account" class="text-sm text-red-500">
+                                <p
+                                    v-if="form.errors.bank_account"
+                                    class="text-sm text-red-500"
+                                >
                                     {{ form.errors.bank_account }}
                                 </p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Background Image -->
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-semibold">Obrázok na pozadí</h2>
+                    <div
+                        v-show="activeTab === 'appearance'"
+                        data-tab="appearance"
+                        role="tabpanel"
+                        class="space-y-8"
+                    >
+                        <!-- Background Image -->
+                        <div class="space-y-4">
+                            <h2 class="text-lg font-semibold">
+                                Obrázok na pozadí
+                            </h2>
 
-                        <!-- Current Background Image -->
-                        <div v-if="event.background_image_path && !form.remove_background_image" class="space-y-2">
-                            <Label>Aktuálny obrázok na pozadí</Label>
-                            <div class="relative">
-                                <img
-                                    :src="`/storage/${event.background_image_path}`"
-                                    alt="Pozadie podujatia"
-                                    class="h-48 w-full rounded-lg object-cover"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    @click="removeBackgroundImage"
-                                    class="absolute top-2 right-2"
-                                >
-                                    Odstrániť
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <Label>{{ event.background_image_path && !form.remove_background_image ? 'Nahradiť obrázok' : 'Nahrať obrázok' }}</Label>
-                            <input
-                                id="background_image"
-                                type="file"
-                                accept="image/jpeg,image/png,image/jpg,image/webp"
-                                @change="handleFileChange"
-                                class="hidden"
-                            />
-                            <Label
-                                for="background_image"
-                                class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-600 p-6 text-center text-gray-500 dark:text-gray-400 transition-all hover:bg-gray-100 dark:hover:bg-gray-700 mt-2"
+                            <!-- Current Background Image -->
+                            <div
+                                v-if="
+                                    event.background_image_path &&
+                                    !form.remove_background_image
+                                "
+                                class="space-y-2"
                             >
-                                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                                <span class="text-sm font-medium">
-                                    {{ form.background_image ? 'Nový obrázok vybraný' : 'Kliknite pre výber obrázka' }}
-                                </span>
-                                <span class="text-xs text-gray-400 mt-1">
-                                    JPEG, PNG, JPG, WEBP (max. 5MB)
-                                </span>
-                            </Label>
-                            <p v-if="form.errors.background_image" class="mt-2 text-sm text-red-500">
-                                {{ form.errors.background_image }}
-                            </p>
-                        </div>
+                                <Label>Aktuálny obrázok na pozadí</Label>
+                                <div class="relative">
+                                    <img
+                                        :src="`/storage/${event.background_image_path}`"
+                                        alt="Pozadie podujatia"
+                                        class="h-48 w-full rounded-lg object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        @click="removeBackgroundImage"
+                                        class="absolute top-2 right-2"
+                                    >
+                                        Odstrániť
+                                    </Button>
+                                </div>
+                            </div>
 
-                        <!-- Preview of New Image -->
-                        <div v-if="form.background_image" class="space-y-2">
-                            <Label>Náhľad nového obrázka</Label>
-                            <div class="relative">
-                                <img
-                                    :src="previewImageUrl"
-                                    alt="Náhľad obrázka"
-                                    class="h-48 w-full rounded-lg object-cover"
+                            <div>
+                                <Label>{{
+                                    event.background_image_path &&
+                                    !form.remove_background_image
+                                        ? 'Nahradiť obrázok'
+                                        : 'Nahrať obrázok'
+                                }}</Label>
+                                <input
+                                    id="background_image"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/jpg,image/webp"
+                                    @change="handleFileChange"
+                                    class="hidden"
                                 />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    @click="form.background_image = null"
-                                    class="absolute top-2 right-2"
+                                <Label
+                                    for="background_image"
+                                    class="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-500 transition-all hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                                 >
-                                    Zrušiť
-                                </Button>
+                                    <svg
+                                        class="mb-2 h-8 w-8"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                        />
+                                    </svg>
+                                    <span class="text-sm font-medium">
+                                        {{
+                                            form.background_image
+                                                ? 'Nový obrázok vybraný'
+                                                : 'Kliknite pre výber obrázka'
+                                        }}
+                                    </span>
+                                    <span class="mt-1 text-xs text-gray-400">
+                                        JPEG, PNG, JPG, WEBP (max. 5MB)
+                                    </span>
+                                </Label>
+                                <p
+                                    v-if="form.errors.background_image"
+                                    class="mt-2 text-sm text-red-500"
+                                >
+                                    {{ form.errors.background_image }}
+                                </p>
+                            </div>
+
+                            <!-- Preview of New Image -->
+                            <div v-if="form.background_image" class="space-y-2">
+                                <Label>Náhľad nového obrázka</Label>
+                                <div class="relative">
+                                    <img
+                                        :src="previewImageUrl"
+                                        alt="Náhľad obrázka"
+                                        class="h-48 w-full rounded-lg object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        @click="form.background_image = null"
+                                        class="absolute top-2 right-2"
+                                    >
+                                        Zrušiť
+                                    </Button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Logo -->
-                    <div class="space-y-4">
-                        <h2 class="text-xl font-semibold">Logo</h2>
+                        <!-- Logo -->
+                        <div class="space-y-4">
+                            <h2 class="text-lg font-semibold">Logo</h2>
 
-                        <!-- Current Logo -->
-                        <div v-if="event.logo_image_path && !form.remove_logo" class="space-y-2">
-                            <Label>Aktuálne logo</Label>
-                            <div class="relative">
-                                <img
-                                    :src="`/storage/${event.logo_image_path}`"
-                                    alt="Logo podujatia"
-                                    class="h-24 w-full rounded-lg object-cover"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="destructive"
-                                    @click="removeLogo"
-                                    class="absolute top-2 right-2"
-                                >
-                                    Odstrániť
-                                </Button>
-                            </div>
-                        </div>
-
-                        <div>
-                            <Label>{{ event.logo_image_path && !form.remove_logo ? 'Nahradiť logo' : 'Nahrať logo' }}</Label>
-                            <input
-                                id="logo"
-                                type="file"
-                                accept="image/jpeg,image/png,image/jpg,image/webp"
-                                @change="handleLogoChange"
-                                class="hidden"
-                            />
-                            <Label
-                                for="logo"
-                                class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 dark:bg-gray-800 dark:border-gray-600 p-6 text-center text-gray-500 dark:text-gray-400 transition-all hover:bg-gray-100 dark:hover:bg-gray-700 mt-2"
+                            <!-- Current Logo -->
+                            <div
+                                v-if="
+                                    event.logo_image_path && !form.remove_logo
+                                "
+                                class="space-y-2"
                             >
-                                <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                                </svg>
-                                <span class="text-sm font-medium">
-                                    {{ form.logo ? 'Nové logo vybrané' : 'Kliknite pre výber loga' }}
-                                </span>
-                                <span class="text-xs text-gray-400 mt-1">
-                                    JPEG, PNG, JPG, WEBP (max. 5MB)
-                                </span>
-                            </Label>
-                            <p v-if="form.errors.logo" class="mt-2 text-sm text-red-500">
-                                {{ form.errors.logo }}
-                            </p>
-                        </div>
+                                <Label>Aktuálne logo</Label>
+                                <div class="relative">
+                                    <img
+                                        :src="`/storage/${event.logo_image_path}`"
+                                        alt="Logo podujatia"
+                                        class="h-24 w-full rounded-lg object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        @click="removeLogo"
+                                        class="absolute top-2 right-2"
+                                    >
+                                        Odstrániť
+                                    </Button>
+                                </div>
+                            </div>
 
-                        <!-- Preview of New Logo -->
-                        <div v-if="form.logo" class="space-y-2">
-                            <Label>Náhľad nového loga</Label>
-                            <div class="relative">
-                                <img
-                                    :src="previewLogoUrl"
-                                    alt="Náhľad loga"
-                                    class="h-24 w-full rounded-lg object-cover"
+                            <div>
+                                <Label>{{
+                                    event.logo_image_path && !form.remove_logo
+                                        ? 'Nahradiť logo'
+                                        : 'Nahrať logo'
+                                }}</Label>
+                                <input
+                                    id="logo"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/jpg,image/webp"
+                                    @change="handleLogoChange"
+                                    class="hidden"
                                 />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    @click="form.logo = null"
-                                    class="absolute top-2 right-2"
+                                <Label
+                                    for="logo"
+                                    class="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-500 transition-all hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
                                 >
-                                    Zrušiť
-                                </Button>
+                                    <svg
+                                        class="mb-2 h-8 w-8"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            stroke-linecap="round"
+                                            stroke-linejoin="round"
+                                            stroke-width="2"
+                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                        />
+                                    </svg>
+                                    <span class="text-sm font-medium">
+                                        {{
+                                            form.logo
+                                                ? 'Nové logo vybrané'
+                                                : 'Kliknite pre výber loga'
+                                        }}
+                                    </span>
+                                    <span class="mt-1 text-xs text-gray-400">
+                                        JPEG, PNG, JPG, WEBP (max. 5MB)
+                                    </span>
+                                </Label>
+                                <p
+                                    v-if="form.errors.logo"
+                                    class="mt-2 text-sm text-red-500"
+                                >
+                                    {{ form.errors.logo }}
+                                </p>
+                            </div>
+
+                            <!-- Preview of New Logo -->
+                            <div v-if="form.logo" class="space-y-2">
+                                <Label>Náhľad nového loga</Label>
+                                <div class="relative">
+                                    <img
+                                        :src="previewLogoUrl"
+                                        alt="Náhľad loga"
+                                        class="h-24 w-full rounded-lg object-cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        @click="form.logo = null"
+                                        class="absolute top-2 right-2"
+                                    >
+                                        Zrušiť
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Submit Button -->
-                    <div class="flex items-center gap-4 pt-4">
+                    <div class="flex items-center gap-4 border-t pt-4">
                         <Button
                             type="submit"
                             :disabled="form.processing"
-                            class="bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                            class="cursor-pointer bg-blue-600 text-white hover:bg-blue-700"
                         >
-                            {{ form.processing ? 'Ukladá sa...' : 'Uložiť zmeny' }}
+                            {{
+                                form.processing
+                                    ? 'Ukladá sa...'
+                                    : 'Uložiť zmeny'
+                            }}
                         </Button>
                         <Button
                             type="button"
                             variant="outline"
-                            @click="$inertia.visit(`/event/${event.url_slug}/manage`)"
+                            @click="
+                                $inertia.visit(
+                                    `/event/${event.url_slug}/manage`,
+                                )
+                            "
                             :disabled="form.processing"
                         >
                             Zrušiť

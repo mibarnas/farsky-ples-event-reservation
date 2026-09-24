@@ -7,7 +7,7 @@
             <div>
                 <div>
                     Rezervačný systém pre <b>Farský ples Čierna Voda</b> vyvinul
-                    <a href="mailto:michal.barnas@hostnow.cz" target="_blank" class="underline">Michal Barnáš</a>
+                    <a href="https://barnas.net/" target="_blank" class="underline">Michal Barnáš</a>
                     &copy; {{ new Date().getFullYear() }}
                 </div>
                 <div>

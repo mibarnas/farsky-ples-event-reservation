@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue';
+import type { EventTable } from '@/lib/seatRanges';
+import { drawTableLabels } from '@/lib/tableLabels';
 
 const props = defineProps<{
   // External template mode
@@ -16,6 +18,8 @@ const props = defineProps<{
   reservedSeats?: number[];
   // New: mapping of seat number to guest name for tooltips
   seatNames?: Record<number, string>;
+  // Event's table setup; table names are drawn onto the external map from it
+  tables?: EventTable[];
 }>();
 
 const emit = defineEmits(['update:modelValue']);
@@ -140,6 +144,15 @@ function bindExternalHandlers() {
     node.addEventListener('mouseleave', onSeatNodeMouseLeave());
   });
   reconcileExternalUI();
+  labelTables();
+}
+
+function labelTables() {
+  drawTableLabels(
+    containerRef.value,
+    new Map(seatNodes.map((node, i) => [seatIndices[i] ?? i, node])),
+    props.tables,
+  );
 }
 
 function unbindExternalHandlers() {
@@ -195,6 +208,8 @@ watch(() => props.reservedSeats, () => {
   reconcileExternalUI();
   drawSeats();
 }, { deep: true });
+
+watch(() => props.tables, labelTables, { deep: true });
 
 // Reload external template if src or selector changes
 watch(

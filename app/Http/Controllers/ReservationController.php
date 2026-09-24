@@ -134,6 +134,7 @@ class ReservationController extends Controller
         return Inertia::render('event/Seats', [
             'event' => $event->only(['id', 'title', 'url_slug', 'seats_total']),
             'svgMap' => $event->location?->svg_map,
+            'tables' => $event->tableSetup(),
             'reservations' => $reservations,
         ]);
     }
