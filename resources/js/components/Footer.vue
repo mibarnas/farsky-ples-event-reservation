@@ -1,10 +1,3 @@
-<script setup lang="ts">
-interface Props {
-}
-
-defineProps<Props>();
-</script>
-
 <template>
     <main class="max-w flex justify-center opacity-100 transition-opacity duration-750 starting:opacity-0">
         <div class="flex flex-col justify-center text-center dark:text-white z-10 gap-2 my-6 w-full max-w-[335px] text-sm lg:max-w-4xl">

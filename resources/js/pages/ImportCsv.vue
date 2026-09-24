@@ -119,13 +119,6 @@ const confirmImport = () => {
 const resetUpload = () => {
     router.get(`/event/${props.event.url_slug}/import-csv`);
 };
-
-const totalOrders = computed(() => {
-    if (!props.preview) return 0;
-    return props.preview.to_confirm.length +
-           props.preview.to_cancel.length +
-           props.preview.to_remain.length;
-});
 </script>
 
 <template>

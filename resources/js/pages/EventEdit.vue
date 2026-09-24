@@ -166,7 +166,6 @@ const submit = () => {
         });
     } else {
         // No files, just submit as regular form data
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { background_image: _, logo: __, ...formDataWithoutFiles } = form.data();
 
         router.post(`/event/${props.event.url_slug}`, formDataWithoutFiles, {

@@ -13,6 +13,8 @@ export default defineConfigWithVueTs(
         rules: {
             'vue/multi-word-component-names': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
+            // Allow dropping keys via destructuring, e.g. `const { logo: _, ...rest } = data`
+            '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
         },
     },
     prettier,
