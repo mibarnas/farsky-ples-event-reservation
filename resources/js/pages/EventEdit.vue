@@ -436,12 +436,11 @@ const submit = () => {
                             <Textarea
                                 id="description"
                                 v-model="form.description"
-                                rows="4"
                                 show-markdown
                                 :class="
                                     form.errors.description
-                                        ? 'border-red-500'
-                                        : ''
+                                        ? 'min-h-72 border-red-500'
+                                        : 'min-h-72'
                                 "
                             />
                             <p
