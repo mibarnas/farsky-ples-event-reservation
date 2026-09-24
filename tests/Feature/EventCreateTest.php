@@ -75,8 +75,13 @@ class EventCreateTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('EventCreate')
-                ->where('locations.0.svg_map', '/sedenie/seatmap.svg')
-                ->has('locations.0.valid_seats', 50));
+                // Migrations backfill default locations too, so look ours up by id.
+                ->where('locations', function ($locations) {
+                    $location = $locations->firstWhere('id', $this->location->id);
+
+                    return $location['svg_map'] === '/sedenie/seatmap.svg'
+                        && count($location['valid_seats']) === 50;
+                }));
     }
 
     public function test_event_is_created_with_tables_and_tickets()
