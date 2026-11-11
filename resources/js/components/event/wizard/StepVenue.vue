@@ -1,11 +1,17 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import SeatMap from '@/components/SeatMap.vue';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2Icon, MapPinIcon } from 'lucide-vue-next';
+import { ref, watch } from 'vue';
 import { useWizard } from './context';
 
 const { form, error, locations, selectedLocation } = useWizard();
+
+// Read-only preview of the selected location's seat map
+const hoveredSeat = ref<number | null>(null);
+watch(selectedLocation, () => (hoveredSeat.value = null));
 </script>
 
 <template>
@@ -50,6 +56,28 @@ const { form, error, locations, selectedLocation } = useWizard();
                 administrátora.
             </p>
             <InputError :message="error('location_id')" />
+        </div>
+
+        <div v-if="selectedLocation?.svg_map" class="space-y-2">
+            <Label>Náhľad mapy sedenia</Label>
+            <SeatMap
+                :key="selectedLocation.id"
+                :src="selectedLocation.svg_map"
+                :colors="{}"
+                default-color="#e4e4e7"
+                readonly
+                @seat-hover="hoveredSeat = $event"
+            />
+            <div
+                class="flex min-h-5 flex-wrap justify-between gap-2 text-sm text-muted-foreground"
+            >
+                <span>{{
+                    hoveredSeat !== null ? `Miesto ${hoveredSeat}` : ''
+                }}</span>
+                <span v-if="selectedLocation.valid_seats">
+                    {{ selectedLocation.valid_seats.length }} miest na mape
+                </span>
+            </div>
         </div>
 
         <div class="space-y-2">

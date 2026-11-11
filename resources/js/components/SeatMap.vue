@@ -16,6 +16,8 @@ const props = defineProps<{
     strokes?: Record<number, string>;
     tables?: EventTable[];
     extraSeats?: ExtraSeat[];
+    // Display only: no pointer cursor on seats
+    readonly?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -40,7 +42,7 @@ function paint() {
         );
         node.setAttribute('stroke', props.strokes?.[seat] ?? '#333');
         node.setAttribute('stroke-width', '2');
-        node.style.cursor = 'pointer';
+        node.style.cursor = props.readonly ? 'default' : 'pointer';
         node.style.transition = 'fill 0.15s';
     });
 }
