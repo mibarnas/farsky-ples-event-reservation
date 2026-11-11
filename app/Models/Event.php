@@ -58,6 +58,43 @@ class Event extends Model
         return json_decode((string) $this->additional_information, true)['tables'] ?? [];
     }
 
+    /**
+     * Seats added to this event on top of the location's SVG map (via the seat plan
+     * editor), stored in additional_information. Coordinates are in the SVG's user units.
+     *
+     * @return list<array{seat: int, x: float, y: float}>
+     */
+    public function extraSeats(): array
+    {
+        $seats = json_decode((string) $this->additional_information, true)['extra_seats'] ?? [];
+
+        return array_values(array_map(fn ($seat) => [
+            'seat' => (int) $seat['seat'],
+            'x' => (float) $seat['x'],
+            'y' => (float) $seat['y'],
+        ], is_array($seats) ? $seats : []));
+    }
+
+    /**
+     * All seat numbers of this event: the location's map plus the event's extra seats.
+     * Null when the location's map can't be read (seat numbers are then not validated).
+     *
+     * @return list<int>|null
+     */
+    public function seatNumbers(): ?array
+    {
+        $locationSeats = $this->location?->seatNumbers();
+
+        if ($locationSeats === null) {
+            return null;
+        }
+
+        return array_values(array_unique([
+            ...$locationSeats,
+            ...array_column($this->extraSeats(), 'seat'),
+        ]));
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

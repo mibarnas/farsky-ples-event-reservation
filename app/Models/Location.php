@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Location extends Model
 {
-
     use HasFactory;
 
     protected $fillable = [
@@ -24,6 +23,34 @@ class Location extends Model
     public function events(): HasMany
     {
         return $this->hasMany(Event::class);
+    }
+
+    /**
+     * The visible area of the location's SVG map (its viewBox, or width/height),
+     * in SVG user units. Null if the map file is missing or has no usable size.
+     *
+     * @return array{x: float, y: float, width: float, height: float}|null
+     */
+    public function mapBounds(): ?array
+    {
+        $path = public_path(ltrim((string) $this->svg_map, '/'));
+        if (! is_file($path) || ! preg_match('/<svg\b[^>]*>/i', file_get_contents($path), $tag)) {
+            return null;
+        }
+
+        if (preg_match('/\bviewBox="([^"]+)"/i', $tag[0], $viewBox)) {
+            $parts = array_map('floatval', preg_split('/[\s,]+/', trim($viewBox[1])));
+            if (count($parts) === 4 && $parts[2] > 0 && $parts[3] > 0) {
+                return ['x' => $parts[0], 'y' => $parts[1], 'width' => $parts[2], 'height' => $parts[3]];
+            }
+        }
+
+        if (preg_match('/\bwidth="([\d.]+)/', $tag[0], $width) && preg_match('/\bheight="([\d.]+)/', $tag[0], $height)
+            && (float) $width[1] > 0 && (float) $height[1] > 0) {
+            return ['x' => 0.0, 'y' => 0.0, 'width' => (float) $width[1], 'height' => (float) $height[1]];
+        }
+
+        return null;
     }
 
     /**

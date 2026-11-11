@@ -2,9 +2,12 @@
 
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\CollaboratorController;
 use App\Http\Controllers\ReservationController;
+use App\Http\Controllers\SeatPlanController;
+use App\Http\Controllers\TestMailController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\EventController;
@@ -16,6 +19,16 @@ Route::get('/', function () {
 Route::get('dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
+
+Route::get('admin', [AdminController::class, 'index'])
+    ->middleware(['auth', 'verified', 'can:admin'])
+    ->name('admin');
+Route::put('admin/alias-event', [AdminController::class, 'updateAliasEvent'])
+    ->middleware(['auth', 'verified', 'can:admin'])
+    ->name('admin.alias-event');
+Route::put('admin/users/{user}/admin', [AdminController::class, 'updateUserAdmin'])
+    ->middleware(['auth', 'verified', 'can:admin'])
+    ->name('admin.user-admin');
 
 Route::get('event/create', [EventController::class, 'create'])
     ->middleware(['auth', 'verified'])
@@ -71,6 +84,13 @@ Route::post('order/{order:url_slug}/cancel', [OrderController::class, 'cancelOrd
 Route::get('reservation/{qrCode}', [ReservationController::class, 'show'])->middleware(['auth', 'verified'])->name('reservation.show');
 Route::get('event/{event:url_slug}/seats', [ReservationController::class, 'seats'])->middleware(['auth', 'verified'])->name('event.seats');
 Route::put('event/{event:url_slug}/reservation/{reservation}/seat', [ReservationController::class, 'changeSeat'])->middleware(['auth', 'verified'])->name('reservation.change-seat');
+
+// Seat plan editor: per-event seats added on top of the location's map
+Route::get('event/{event:url_slug}/seat-plan', [SeatPlanController::class, 'edit'])->middleware(['auth', 'verified'])->name('event.seat-plan');
+Route::put('event/{event:url_slug}/seat-plan', [SeatPlanController::class, 'update'])->middleware(['auth', 'verified'])->name('event.seat-plan.update');
+
+// Test e-mail with a dummy QR code, sent to the logged-in user
+Route::post('event/{event:url_slug}/test-mail', TestMailController::class)->middleware(['auth', 'verified', 'throttle:5,1'])->name('event.test-mail');
 
 // CSV import routes
 Route::get('event/{event:url_slug}/import-csv', [OrderController::class, 'showImportCsv'])->middleware(['auth'])->name('event.import-csv');

@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 800 1000" width="800" height="1000" role="img">
+
+    <!-- White background for consistent appearance in dark/light mode -->
+    <rect x="0" y="0" width="800" height="1000" fill="#ffffff" />
+
+    <rect x="52" y="145" width="40" height="300" rx="2" ry="2" fill="none" stroke="#999" stroke-width="2" />
+    <text x="72" y="295" transform="rotate(-90, 72, 295)" text-anchor="middle" font-size="16" fill="#333">CATERING</text>
+
+    <rect x="21" y="561" width="761" height="308" rx="4" ry="4" fill="none" stroke="#999" stroke-width="2" />
+    <text x="400" y="753" text-anchor="middle" font-size="24" font-weight="bold" fill="#999" opacity="0.5">TANEČNÝ PARKET</text>
+
+    <text x="236" y="853" text-anchor="middle" font-size="18" fill="#333">DVERE</text>
+
+    <!-- Separating line between room and hallway -->
+    <line x1="0" y1="882" x2="795" y2="882" stroke="#666" stroke-width="2"/>
+
+    <rect x="263" y="47" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="1" cx="248" cy="57" r="10" stroke="#333" />
+    <text x="248" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">1</text>
+    <circle class="seat" data-seat="2" cx="248" cy="77" r="10" stroke="#333" />
+    <text x="248" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">2</text>
+    <circle class="seat" data-seat="3" cx="248" cy="97" r="10" stroke="#333" />
+    <text x="248" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">3</text>
+    <circle class="seat" data-seat="4" cx="248" cy="117" r="10" stroke="#333" />
+    <text x="248" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">4</text>
+    <circle class="seat" data-seat="5" cx="248" cy="137" r="10" stroke="#333" />
+    <text x="248" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">5</text>
+    <circle class="seat" data-seat="6" cx="248" cy="157" r="10" stroke="#333" />
+    <text x="248" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">6</text>
+    <circle class="seat" data-seat="7" cx="318" cy="57" r="10" stroke="#333" />
+    <text x="318" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">7</text>
+    <circle class="seat" data-seat="8" cx="318" cy="77" r="10" stroke="#333" />
+    <text x="318" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">8</text>
+    <circle class="seat" data-seat="9" cx="318" cy="97" r="10" stroke="#333" />
+    <text x="318" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">9</text>
+    <circle class="seat" data-seat="10" cx="318" cy="117" r="10" stroke="#333" />
+    <text x="318" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">10</text>
+    <circle class="seat" data-seat="11" cx="318" cy="137" r="10" stroke="#333" />
+    <text x="318" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">11</text>
+    <circle class="seat" data-seat="12" cx="318" cy="157" r="10" stroke="#333" />
+    <text x="318" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">12</text>
+
+    <rect x="383" y="47" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="13" cx="368" cy="57" r="10" stroke="#333" />
+    <text x="368" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">13</text>
+    <circle class="seat" data-seat="14" cx="368" cy="77" r="10" stroke="#333" />
+    <text x="368" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">14</text>
+    <circle class="seat" data-seat="15" cx="368" cy="97" r="10" stroke="#333" />
+    <text x="368" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">15</text>
+    <circle class="seat" data-seat="16" cx="368" cy="117" r="10" stroke="#333" />
+    <text x="368" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">16</text>
+    <circle class="seat" data-seat="17" cx="368" cy="137" r="10" stroke="#333" />
+    <text x="368" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">17</text>
+    <circle class="seat" data-seat="18" cx="368" cy="157" r="10" stroke="#333" />
+    <text x="368" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">18</text>
+    <circle class="seat" data-seat="19" cx="438" cy="57" r="10" stroke="#333" />
+    <text x="438" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">19</text>
+    <circle class="seat" data-seat="20" cx="438" cy="77" r="10" stroke="#333" />
+    <text x="438" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">20</text>
+    <circle class="seat" data-seat="21" cx="438" cy="97" r="10" stroke="#333" />
+    <text x="438" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">21</text>
+    <circle class="seat" data-seat="22" cx="438" cy="117" r="10" stroke="#333" />
+    <text x="438" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">22</text>
+    <circle class="seat" data-seat="23" cx="438" cy="137" r="10" stroke="#333" />
+    <text x="438" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">23</text>
+    <circle class="seat" data-seat="24" cx="438" cy="157" r="10" stroke="#333" />
+    <text x="438" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">24</text>
+
+    <rect x="503" y="47" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="25" cx="488" cy="57" r="10" stroke="#333" />
+    <text x="488" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">25</text>
+    <circle class="seat" data-seat="26" cx="488" cy="77" r="10" stroke="#333" />
+    <text x="488" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">26</text>
+    <circle class="seat" data-seat="27" cx="488" cy="97" r="10" stroke="#333" />
+    <text x="488" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">27</text>
+    <circle class="seat" data-seat="28" cx="488" cy="117" r="10" stroke="#333" />
+    <text x="488" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">28</text>
+    <circle class="seat" data-seat="29" cx="488" cy="137" r="10" stroke="#333" />
+    <text x="488" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">29</text>
+    <circle class="seat" data-seat="30" cx="488" cy="157" r="10" stroke="#333" />
+    <text x="488" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">30</text>
+    <circle class="seat" data-seat="31" cx="558" cy="57" r="10" stroke="#333" />
+    <text x="558" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">31</text>
+    <circle class="seat" data-seat="32" cx="558" cy="77" r="10" stroke="#333" />
+    <text x="558" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">32</text>
+    <circle class="seat" data-seat="33" cx="558" cy="97" r="10" stroke="#333" />
+    <text x="558" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">33</text>
+    <circle class="seat" data-seat="34" cx="558" cy="117" r="10" stroke="#333" />
+    <text x="558" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">34</text>
+    <circle class="seat" data-seat="35" cx="558" cy="137" r="10" stroke="#333" />
+    <text x="558" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">35</text>
+    <circle class="seat" data-seat="36" cx="558" cy="157" r="10" stroke="#333" />
+    <text x="558" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">36</text>
+
+    <rect x="623" y="47" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="37" cx="608" cy="57" r="10" stroke="#333" />
+    <text x="608" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">37</text>
+    <circle class="seat" data-seat="38" cx="608" cy="77" r="10" stroke="#333" />
+    <text x="608" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">38</text>
+    <circle class="seat" data-seat="39" cx="608" cy="97" r="10" stroke="#333" />
+    <text x="608" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">39</text>
+    <circle class="seat" data-seat="40" cx="608" cy="117" r="10" stroke="#333" />
+    <text x="608" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">40</text>
+    <circle class="seat" data-seat="41" cx="608" cy="137" r="10" stroke="#333" />
+    <text x="608" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">41</text>
+    <circle class="seat" data-seat="42" cx="608" cy="157" r="10" stroke="#333" />
+    <text x="608" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">42</text>
+    <circle class="seat" data-seat="43" cx="678" cy="57" r="10" stroke="#333" />
+    <text x="678" y="61" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">43</text>
+    <circle class="seat" data-seat="44" cx="678" cy="77" r="10" stroke="#333" />
+    <text x="678" y="81" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">44</text>
+    <circle class="seat" data-seat="45" cx="678" cy="97" r="10" stroke="#333" />
+    <text x="678" y="101" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">45</text>
+    <circle class="seat" data-seat="46" cx="678" cy="117" r="10" stroke="#333" />
+    <text x="678" y="121" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">46</text>
+    <circle class="seat" data-seat="47" cx="678" cy="137" r="10" stroke="#333" />
+    <text x="678" y="141" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">47</text>
+    <circle class="seat" data-seat="48" cx="678" cy="157" r="10" stroke="#333" />
+    <text x="678" y="161" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">48</text>
+
+    <rect x="263" y="227" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="49" cx="248" cy="237" r="10" stroke="#333" />
+    <text x="248" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">49</text>
+    <circle class="seat" data-seat="50" cx="248" cy="257" r="10" stroke="#333" />
+    <text x="248" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">50</text>
+    <circle class="seat" data-seat="51" cx="248" cy="277" r="10" stroke="#333" />
+    <text x="248" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">51</text>
+    <circle class="seat" data-seat="52" cx="248" cy="297" r="10" stroke="#333" />
+    <text x="248" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">52</text>
+    <circle class="seat" data-seat="53" cx="248" cy="317" r="10" stroke="#333" />
+    <text x="248" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">53</text>
+    <circle class="seat" data-seat="54" cx="248" cy="337" r="10" stroke="#333" />
+    <text x="248" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">54</text>
+    <circle class="seat" data-seat="55" cx="318" cy="237" r="10" stroke="#333" />
+    <text x="318" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">55</text>
+    <circle class="seat" data-seat="56" cx="318" cy="257" r="10" stroke="#333" />
+    <text x="318" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">56</text>
+    <circle class="seat" data-seat="57" cx="318" cy="277" r="10" stroke="#333" />
+    <text x="318" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">57</text>
+    <circle class="seat" data-seat="58" cx="318" cy="297" r="10" stroke="#333" />
+    <text x="318" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">58</text>
+    <circle class="seat" data-seat="59" cx="318" cy="317" r="10" stroke="#333" />
+    <text x="318" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">59</text>
+    <circle class="seat" data-seat="60" cx="318" cy="337" r="10" stroke="#333" />
+    <text x="318" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">60</text>
+
+    <rect x="383" y="227" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="61" cx="368" cy="237" r="10" stroke="#333" />
+    <text x="368" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">61</text>
+    <circle class="seat" data-seat="62" cx="368" cy="257" r="10" stroke="#333" />
+    <text x="368" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">62</text>
+    <circle class="seat" data-seat="63" cx="368" cy="277" r="10" stroke="#333" />
+    <text x="368" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">63</text>
+    <circle class="seat" data-seat="64" cx="368" cy="297" r="10" stroke="#333" />
+    <text x="368" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">64</text>
+    <circle class="seat" data-seat="65" cx="368" cy="317" r="10" stroke="#333" />
+    <text x="368" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">65</text>
+    <circle class="seat" data-seat="66" cx="368" cy="337" r="10" stroke="#333" />
+    <text x="368" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">66</text>
+    <circle class="seat" data-seat="67" cx="438" cy="237" r="10" stroke="#333" />
+    <text x="438" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">67</text>
+    <circle class="seat" data-seat="68" cx="438" cy="257" r="10" stroke="#333" />
+    <text x="438" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">68</text>
+    <circle class="seat" data-seat="69" cx="438" cy="277" r="10" stroke="#333" />
+    <text x="438" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">69</text>
+    <circle class="seat" data-seat="70" cx="438" cy="297" r="10" stroke="#333" />
+    <text x="438" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">70</text>
+    <circle class="seat" data-seat="71" cx="438" cy="317" r="10" stroke="#333" />
+    <text x="438" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">71</text>
+    <circle class="seat" data-seat="72" cx="438" cy="337" r="10" stroke="#333" />
+    <text x="438" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">72</text>
+
+    <rect x="503" y="227" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="73" cx="488" cy="237" r="10" stroke="#333" />
+    <text x="488" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">73</text>
+    <circle class="seat" data-seat="74" cx="488" cy="257" r="10" stroke="#333" />
+    <text x="488" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">74</text>
+    <circle class="seat" data-seat="75" cx="488" cy="277" r="10" stroke="#333" />
+    <text x="488" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">75</text>
+    <circle class="seat" data-seat="76" cx="488" cy="297" r="10" stroke="#333" />
+    <text x="488" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">76</text>
+    <circle class="seat" data-seat="77" cx="488" cy="317" r="10" stroke="#333" />
+    <text x="488" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">77</text>
+    <circle class="seat" data-seat="78" cx="488" cy="337" r="10" stroke="#333" />
+    <text x="488" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">78</text>
+    <circle class="seat" data-seat="79" cx="558" cy="237" r="10" stroke="#333" />
+    <text x="558" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">79</text>
+    <circle class="seat" data-seat="80" cx="558" cy="257" r="10" stroke="#333" />
+    <text x="558" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">80</text>
+    <circle class="seat" data-seat="81" cx="558" cy="277" r="10" stroke="#333" />
+    <text x="558" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">81</text>
+    <circle class="seat" data-seat="82" cx="558" cy="297" r="10" stroke="#333" />
+    <text x="558" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">82</text>
+    <circle class="seat" data-seat="83" cx="558" cy="317" r="10" stroke="#333" />
+    <text x="558" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">83</text>
+    <circle class="seat" data-seat="84" cx="558" cy="337" r="10" stroke="#333" />
+    <text x="558" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">84</text>
+
+    <rect x="623" y="227" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="85" cx="608" cy="237" r="10" stroke="#333" />
+    <text x="608" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">85</text>
+    <circle class="seat" data-seat="86" cx="608" cy="257" r="10" stroke="#333" />
+    <text x="608" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">86</text>
+    <circle class="seat" data-seat="87" cx="608" cy="277" r="10" stroke="#333" />
+    <text x="608" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">87</text>
+    <circle class="seat" data-seat="88" cx="608" cy="297" r="10" stroke="#333" />
+    <text x="608" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">88</text>
+    <circle class="seat" data-seat="89" cx="608" cy="317" r="10" stroke="#333" />
+    <text x="608" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">89</text>
+    <circle class="seat" data-seat="90" cx="608" cy="337" r="10" stroke="#333" />
+    <text x="608" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">90</text>
+    <circle class="seat" data-seat="91" cx="678" cy="237" r="10" stroke="#333" />
+    <text x="678" y="241" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">91</text>
+    <circle class="seat" data-seat="92" cx="678" cy="257" r="10" stroke="#333" />
+    <text x="678" y="261" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">92</text>
+    <circle class="seat" data-seat="93" cx="678" cy="277" r="10" stroke="#333" />
+    <text x="678" y="281" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">93</text>
+    <circle class="seat" data-seat="94" cx="678" cy="297" r="10" stroke="#333" />
+    <text x="678" y="301" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">94</text>
+    <circle class="seat" data-seat="95" cx="678" cy="317" r="10" stroke="#333" />
+    <text x="678" y="321" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">95</text>
+    <circle class="seat" data-seat="96" cx="678" cy="337" r="10" stroke="#333" />
+    <text x="678" y="341" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">96</text>
+
+    <rect x="263" y="407" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="133" cx="248" cy="417" r="10" stroke="#333" />
+    <text x="248" y="421" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">133</text>
+    <circle class="seat" data-seat="134" cx="248" cy="437" r="10" stroke="#333" />
+    <text x="248" y="441" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">134</text>
+    <circle class="seat" data-seat="135" cx="248" cy="457" r="10" stroke="#333" />
+    <text x="248" y="461" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">135</text>
+    <circle class="seat" data-seat="136" cx="248" cy="477" r="10" stroke="#333" />
+    <text x="248" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">136</text>
+    <circle class="seat" data-seat="137" cx="248" cy="497" r="10" stroke="#333" />
+    <text x="248" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">137</text>
+    <circle class="seat" data-seat="138" cx="248" cy="517" r="10" stroke="#333" />
+    <text x="248" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">138</text>
+    <circle class="seat" data-seat="139" cx="318" cy="417" r="10" stroke="#333" />
+    <text x="318" y="421" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">139</text>
+    <circle class="seat" data-seat="140" cx="318" cy="437" r="10" stroke="#333" />
+    <text x="318" y="441" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">140</text>
+    <circle class="seat" data-seat="141" cx="318" cy="457" r="10" stroke="#333" />
+    <text x="318" y="461" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">141</text>
+    <circle class="seat" data-seat="142" cx="318" cy="477" r="10" stroke="#333" />
+    <text x="318" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">142</text>
+    <circle class="seat" data-seat="143" cx="318" cy="497" r="10" stroke="#333" />
+    <text x="318" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">143</text>
+    <circle class="seat" data-seat="144" cx="318" cy="517" r="10" stroke="#333" />
+    <text x="318" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">144</text>
+
+    <rect x="383" y="407" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="97" cx="368" cy="417" r="10" stroke="#333" />
+    <text x="368" y="421" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">97</text>
+    <circle class="seat" data-seat="98" cx="368" cy="437" r="10" stroke="#333" />
+    <text x="368" y="441" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">98</text>
+    <circle class="seat" data-seat="99" cx="368" cy="457" r="10" stroke="#333" />
+    <text x="368" y="461" text-anchor="middle" font-size="8" font-weight="bold" fill="#333">99</text>
+    <circle class="seat" data-seat="100" cx="368" cy="477" r="10" stroke="#333" />
+    <text x="368" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">100</text>
+    <circle class="seat" data-seat="101" cx="368" cy="497" r="10" stroke="#333" />
+    <text x="368" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">101</text>
+    <circle class="seat" data-seat="102" cx="368" cy="517" r="10" stroke="#333" />
+    <text x="368" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">102</text>
+    <circle class="seat" data-seat="103" cx="438" cy="417" r="10" stroke="#333" />
+    <text x="438" y="421" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">103</text>
+    <circle class="seat" data-seat="104" cx="438" cy="437" r="10" stroke="#333" />
+    <text x="438" y="441" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">104</text>
+    <circle class="seat" data-seat="105" cx="438" cy="457" r="10" stroke="#333" />
+    <text x="438" y="461" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">105</text>
+    <circle class="seat" data-seat="106" cx="438" cy="477" r="10" stroke="#333" />
+    <text x="438" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">106</text>
+    <circle class="seat" data-seat="107" cx="438" cy="497" r="10" stroke="#333" />
+    <text x="438" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">107</text>
+    <circle class="seat" data-seat="108" cx="438" cy="517" r="10" stroke="#333" />
+    <text x="438" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">108</text>
+
+    <rect x="503" y="407" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="109" cx="488" cy="417" r="10" stroke="#333" />
+    <text x="488" y="421" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">109</text>
+    <circle class="seat" data-seat="110" cx="488" cy="437" r="10" stroke="#333" />
+    <text x="488" y="441" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">110</text>
+    <circle class="seat" data-seat="111" cx="488" cy="457" r="10" stroke="#333" />
+    <text x="488" y="461" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">111</text>
+    <circle class="seat" data-seat="112" cx="488" cy="477" r="10" stroke="#333" />
+    <text x="488" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">112</text>
+    <circle class="seat" data-seat="113" cx="488" cy="497" r="10" stroke="#333" />
+    <text x="488" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">113</text>
+    <circle class="seat" data-seat="114" cx="488" cy="517" r="10" stroke="#333" />
+    <text x="488" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">114</text>
+    <circle class="seat" data-seat="115" cx="558" cy="417" r="10" stroke="#333" />
+    <text x="558" y="421" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">115</text>
+    <circle class="seat" data-seat="116" cx="558" cy="437" r="10" stroke="#333" />
+    <text x="558" y="441" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">116</text>
+    <circle class="seat" data-seat="117" cx="558" cy="457" r="10" stroke="#333" />
+    <text x="558" y="461" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">117</text>
+    <circle class="seat" data-seat="118" cx="558" cy="477" r="10" stroke="#333" />
+    <text x="558" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">118</text>
+    <circle class="seat" data-seat="119" cx="558" cy="497" r="10" stroke="#333" />
+    <text x="558" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">119</text>
+    <circle class="seat" data-seat="120" cx="558" cy="517" r="10" stroke="#333" />
+    <text x="558" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">120</text>
+
+    <rect x="623" y="407" width="40" height="120" fill="#e5e7eb" stroke="#999" stroke-width="2" />
+    <circle class="seat" data-seat="121" cx="608" cy="417" r="10" stroke="#333" />
+    <text x="608" y="421" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">121</text>
+    <circle class="seat" data-seat="122" cx="608" cy="437" r="10" stroke="#333" />
+    <text x="608" y="441" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">122</text>
+    <circle class="seat" data-seat="123" cx="608" cy="457" r="10" stroke="#333" />
+    <text x="608" y="461" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">123</text>
+    <circle class="seat" data-seat="124" cx="608" cy="477" r="10" stroke="#333" />
+    <text x="608" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">124</text>
+    <circle class="seat" data-seat="125" cx="608" cy="497" r="10" stroke="#333" />
+    <text x="608" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">125</text>
+    <circle class="seat" data-seat="126" cx="608" cy="517" r="10" stroke="#333" />
+    <text x="608" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">126</text>
+    <circle class="seat" data-seat="127" cx="678" cy="417" r="10" stroke="#333" />
+    <text x="678" y="421" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">127</text>
+    <circle class="seat" data-seat="128" cx="678" cy="437" r="10" stroke="#333" />
+    <text x="678" y="441" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">128</text>
+    <circle class="seat" data-seat="129" cx="678" cy="457" r="10" stroke="#333" />
+    <text x="678" y="461" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">129</text>
+    <circle class="seat" data-seat="130" cx="678" cy="477" r="10" stroke="#333" />
+    <text x="678" y="481" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">130</text>
+    <circle class="seat" data-seat="131" cx="678" cy="497" r="10" stroke="#333" />
+    <text x="678" y="501" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">131</text>
+    <circle class="seat" data-seat="132" cx="678" cy="517" r="10" stroke="#333" />
+    <text x="678" y="521" text-anchor="middle" font-size="7" font-weight="bold" fill="#333">132</text>
+
+    <g transform="translate(30, 950)">
+        <circle cx="10" cy="10" r="8" fill="#57ff75" stroke="#333" />
+        <text x="26" y="14" font-size="12" fill="#333">Voľné</text>
+        <circle cx="80" cy="10" r="8" fill="#fc2403" stroke="#333" />
+        <text x="96" y="14" font-size="12" fill="#333">Rezervované</text>
+        <circle cx="190" cy="10" r="8" fill="#2563eb" stroke="#333" />
+        <text x="206" y="14" font-size="12" fill="#333">Vybrané</text>
+    </g>
+
+</svg>

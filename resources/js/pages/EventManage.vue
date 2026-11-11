@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
     AlertCircleIcon,
+    ArmchairIcon,
     ArrowLeftRightIcon,
     CalendarIcon,
     CheckCircleIcon,
@@ -401,6 +402,20 @@ const openPrintPage = () => {
     window.open(`/event/${props.event.url_slug}/print`, '_blank');
 };
 
+const sendingTestMail = ref(false);
+
+const sendTestMail = () => {
+    router.post(
+        `/event/${props.event.url_slug}/test-mail`,
+        {},
+        {
+            preserveScroll: true,
+            onStart: () => (sendingTestMail.value = true),
+            onFinish: () => (sendingTestMail.value = false),
+        },
+    );
+};
+
 const page = usePage();
 const flash = computed(
     () =>
@@ -526,6 +541,28 @@ const occupancy = computed(() =>
                             <ArrowLeftRightIcon class="h-4 w-4" />
                             Zmeniť miesta
                         </Link>
+                        <Link
+                            v-if="canManage"
+                            :href="`/event/${event.url_slug}/seat-plan`"
+                            class="inline-flex items-center gap-2 rounded-lg border border-sidebar-border px-4 py-2 text-foreground transition-all hover:bg-muted"
+                        >
+                            <ArmchairIcon class="h-4 w-4" />
+                            Editor sedenia
+                        </Link>
+                        <Button
+                            variant="outline"
+                            class="h-auto px-4 py-2"
+                            :disabled="sendingTestMail"
+                            title="Odošle testovací e-mail s ukážkovým QR kódom na Váš e-mail"
+                            @click="sendTestMail"
+                        >
+                            <MailIcon class="h-4 w-4" />
+                            {{
+                                sendingTestMail
+                                    ? 'Odosielam…'
+                                    : 'Testovací e-mail'
+                            }}
+                        </Button>
                         <Link
                             v-if="canManage"
                             :href="`/event/${event.url_slug}/edit`"

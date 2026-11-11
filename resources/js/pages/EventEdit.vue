@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
+import type { ExtraSeat } from '@/lib/extraSeats';
 import type { EventTable } from '@/lib/seatRanges';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
@@ -50,6 +51,7 @@ const props = defineProps<{
     event: Event;
     locations: Location[];
     tables: EventTable[];
+    extraSeats: ExtraSeat[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -105,6 +107,16 @@ const form = useForm({
 
 const eventLocation = computed(
     () => props.locations.find((l) => l.id === props.event.location_id) ?? null,
+);
+
+// The location's seats plus the seats added in the seat plan editor
+const validSeats = computed(() =>
+    eventLocation.value?.valid_seats
+        ? [
+              ...eventLocation.value.valid_seats,
+              ...props.extraSeats.map((seat) => seat.seat),
+          ]
+        : null,
 );
 
 // Submissions without files go through router.post, whose errors land in page props.
@@ -615,7 +627,8 @@ const submit = () => {
                             v-model:enabled="form.tables_enabled"
                             v-model:tables="form.tables"
                             :svg-map="eventLocation?.svg_map"
-                            :valid-seats="eventLocation?.valid_seats"
+                            :valid-seats="validSeats"
+                            :extra-seats="extraSeats"
                             :errors="tableErrors"
                         />
                     </div>

@@ -2,6 +2,7 @@
 import { ref, onMounted, watch, nextTick, onBeforeUnmount } from 'vue';
 import type { EventTable } from '@/lib/seatRanges';
 import { drawTableLabels } from '@/lib/tableLabels';
+import { drawExtraSeats, type ExtraSeat } from '@/lib/extraSeats';
 
 const props = defineProps<{
   // External template mode
@@ -20,6 +21,8 @@ const props = defineProps<{
   seatNames?: Record<number, string>;
   // Event's table setup; table names are drawn onto the external map from it
   tables?: EventTable[];
+  // Seats added to the event on top of the external map
+  extraSeats?: ExtraSeat[];
 }>();
 
 const emit = defineEmits(['update:modelValue']);
@@ -127,6 +130,7 @@ function onSeatNodeMouseLeave() {
 function bindExternalHandlers() {
   const root = containerRef.value;
   if (!root) return;
+  drawExtraSeats(root, props.extraSeats);
   // Prefer provided selector, otherwise try some sensible defaults
   const selector = seatCssSelector || 'circle.seat, circle[data-seat], circle';
   seatNodes = Array.from(root.querySelectorAll(selector)) as SVGCircleElement[];

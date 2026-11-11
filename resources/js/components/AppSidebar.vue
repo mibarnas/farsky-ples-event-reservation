@@ -13,17 +13,23 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
-import { Folder, HelpingHand, LayoutGrid } from 'lucide-vue-next';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+import { Folder, HelpingHand, LayoutGrid, ShieldCheck } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
-const mainNavItems: NavItem[] = [
+const page = usePage();
+
+const mainNavItems = computed<NavItem[]>(() => [
     {
         title: 'Dashboard',
         href: dashboard(),
         icon: LayoutGrid,
     },
-];
+    ...(page.props.auth.isAdmin
+        ? [{ title: 'Administrácia', href: '/admin', icon: ShieldCheck }]
+        : []),
+]);
 
 const footerNavItems: NavItem[] = [
     {

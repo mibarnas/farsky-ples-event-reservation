@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { ExtraSeat } from '@/lib/extraSeats';
 import {
     formatSeatRanges,
     parseSeatRanges,
@@ -29,6 +30,8 @@ import { computed, ref } from 'vue';
 const props = defineProps<{
     svgMap?: string | null;
     validSeats?: number[] | null;
+    // Seats added to the event on top of the location's map
+    extraSeats?: ExtraSeat[];
     // Server-side validation errors, keyed like "tables.0.seats".
     errors?: Record<string, string>;
 }>();
@@ -587,6 +590,7 @@ function importJson() {
                         :colors="seatColors"
                         :default-color="UNASSIGNED"
                         :tables="tables"
+                        :extra-seats="extraSeats"
                         @seat-click="onSeatClick"
                         @seat-hover="hoveredSeat = $event"
                     />

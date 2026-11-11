@@ -57,7 +57,7 @@ class EventController extends Controller
         $validator->after(function (ValidatorInstance $validator) use ($request) {
             $location = Location::find($request->input('location_id'));
             if ($location) {
-                $this->validateTableSeats($validator, $request, $location);
+                $this->validateTableSeats($validator, $request, $location->seatNumbers());
             }
         });
 
@@ -234,6 +234,7 @@ class EventController extends Controller
             'event' => $event,
             'locations' => $this->locationsWithSeats(),
             'tables' => $event->tableSetup(),
+            'extraSeats' => $event->extraSeats(),
         ]);
     }
 
@@ -275,7 +276,7 @@ class EventController extends Controller
 
         $validator->after(function (ValidatorInstance $validator) use ($request, $event) {
             if ($request->has('tables_enabled')) {
-                $this->validateTableSeats($validator, $request, $event->location);
+                $this->validateTableSeats($validator, $request, $event->seatNumbers());
             }
         });
 
@@ -412,15 +413,16 @@ class EventController extends Controller
     }
 
     /**
-     * Reject seats shared by several tables and seats that don't exist on the location's map.
+     * Reject seats shared by several tables and seats that don't exist on the seat map.
+     *
+     * @param  list<int>|null  $validSeats  null when the map can't be read (seats are then not checked)
      */
-    private function validateTableSeats(ValidatorInstance $validator, Request $request, ?Location $location): void
+    private function validateTableSeats(ValidatorInstance $validator, Request $request, ?array $validSeats): void
     {
         if (! $request->boolean('tables_enabled') || $validator->errors()->isNotEmpty()) {
             return;
         }
 
-        $validSeats = $location?->seatNumbers();
         $owners = [];
 
         foreach ((array) $request->input('tables', []) as $index => $table) {

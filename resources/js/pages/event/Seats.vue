@@ -4,6 +4,7 @@ import SeatMap from '@/components/SeatMap.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { ExtraSeat } from '@/lib/extraSeats';
 import type { EventTable } from '@/lib/seatRanges';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
@@ -22,6 +23,7 @@ const props = defineProps<{
     event: { id: number; title: string; url_slug: string; seats_total: number };
     svgMap: string | null;
     tables: EventTable[];
+    extraSeats: ExtraSeat[];
     reservations: SeatReservation[];
 }>();
 
@@ -176,6 +178,7 @@ function submit() {
                         :colors="seatColors"
                         :default-color="COLORS.free"
                         :tables="tables"
+                        :extra-seats="extraSeats"
                         @seat-click="onSeatClick"
                         @seat-hover="hoveredSeat = $event"
                     />

@@ -56,6 +56,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Administrator
+    |--------------------------------------------------------------------------
+    |
+    | The user with this e-mail address gets access to the read-only admin
+    | dashboard. It does NOT grant permission to manage or edit events; the
+    | administrator still has to be added to an event as a collaborator.
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL', 'michal.blava@gmail.com'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Alias Domains
+    |--------------------------------------------------------------------------
+    |
+    | Comma-separated hosts that point at this application but only redirect
+    | to the event selected in the admin dashboard (on the APP_URL domain).
+    |
+    */
+
+    'alias_domains' => array_values(array_filter(array_map(
+        fn ($host) => strtolower(trim($host)),
+        explode(',', (string) env('ALIAS_DOMAINS', 'farskyplesciernavoda.sk,www.farskyplesciernavoda.sk'))
+    ))),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

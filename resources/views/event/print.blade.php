@@ -247,6 +247,8 @@
                         $svg = $dom->getElementsByTagName('svg')->item(0);
 
                         if ($svg) {
+                            \App\Support\ExtraSeats::draw($dom, $event->extraSeats());
+
                             // Find all circles with data-seat attribute
                             $xpath = new DOMXPath($dom);
                             $circles = $xpath->query('//circle[@data-seat]');

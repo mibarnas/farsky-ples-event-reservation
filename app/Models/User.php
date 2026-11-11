@@ -46,6 +46,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 
@@ -63,5 +64,26 @@ class User extends Authenticatable
         return $this->belongsToMany(Event::class, 'event_user')
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    /**
+     * Whether this user is the permanent administrator configured via ADMIN_EMAIL.
+     * They are always admin and cannot be demoted from the dashboard.
+     */
+    public function isRootAdmin(): bool
+    {
+        $adminEmail = config('app.admin_email');
+
+        return filled($adminEmail)
+            && strcasecmp(trim($adminEmail), trim($this->email)) === 0;
+    }
+
+    /**
+     * Whether this user can access the admin dashboard: the root admin, or anyone
+     * promoted there (is_admin). It grants no event permissions.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->isRootAdmin() || (bool) $this->is_admin;
     }
 }

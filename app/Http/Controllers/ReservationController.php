@@ -135,6 +135,7 @@ class ReservationController extends Controller
             'event' => $event->only(['id', 'title', 'url_slug', 'seats_total']),
             'svgMap' => $event->location?->svg_map,
             'tables' => $event->tableSetup(),
+            'extraSeats' => $event->extraSeats(),
             'reservations' => $reservations,
         ]);
     }
@@ -157,7 +158,7 @@ class ReservationController extends Controller
             return back()->with('error', 'Miesta v zrušenej objednávke nie je možné meniť.');
         }
 
-        $validSeats = $event->location?->seatNumbers();
+        $validSeats = $event->seatNumbers();
 
         $validated = $request->validate([
             'seat_number' => array_filter(['required', 'integer', 'min:0', $validSeats !== null ? Rule::in($validSeats) : null]),

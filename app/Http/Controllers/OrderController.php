@@ -67,6 +67,7 @@ class OrderController extends Controller
                 'seat_names' => $seatNames,
                 'location' => optional($event->location)->svg_map,
                 'tables' => $event->tableSetup(),
+                'extra_seats' => $event->extraSeats(),
             ]),
             'location' => $event->location,
             'tickets' => $event->tickets,
@@ -80,7 +81,7 @@ class OrderController extends Controller
                 ->with('error', self::REGISTRATION_CLOSED_MESSAGE);
         }
 
-        $validSeats = $event->location?->seatNumbers();
+        $validSeats = $event->seatNumbers();
         $seatCount = count((array) $request->input('seats', []));
 
         $validated = $request->validate([
