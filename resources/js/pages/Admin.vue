@@ -172,7 +172,7 @@ const formatDate = (value: string) =>
                                 class="border-t border-sidebar-border/50"
                             >
                                 <td class="px-4 py-2">
-                                    <Link :href="`/event/${event.url_slug}`" class="font-medium hover:underline">
+                                    <Link :href="`/event/${event.url_slug}/manage`" class="font-medium hover:underline">
                                         {{ event.title }}
                                     </Link>
                                 </td>

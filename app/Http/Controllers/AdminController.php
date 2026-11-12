@@ -15,8 +15,9 @@ use Inertia\Response;
 /**
  * Read-only overview for the application administrator.
  *
- * Deliberately exposes no management actions: being admin does not grant
- * any event permissions (those still come from ownership / collaborator roles).
+ * Being admin grants read-only access to every event dashboard and the
+ * per-event "redirect when ended" switch; all other event permissions still
+ * come from ownership / collaborator roles.
  */
 class AdminController extends Controller
 {

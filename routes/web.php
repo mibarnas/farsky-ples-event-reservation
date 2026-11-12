@@ -74,6 +74,9 @@ Route::delete('event/{event:url_slug}/collaborator/{user}', [CollaboratorControl
 Route::post('event/{event:url_slug}/order', [OrderController::class, 'store'])->middleware('throttle:10,1')->name('order.store');
 Route::get('event/{event:url_slug}/order', [OrderController::class, 'create'])->name('order.create');
 Route::get('event/{event:url_slug}', [EventController::class, 'show'])->name('event.show');
+Route::put('event/{event:url_slug}/redirect-when-ended', [EventController::class, 'updateRedirectWhenEnded'])
+    ->middleware(['auth', 'verified'])
+    ->name('event.redirect-when-ended');
 
 Route::get('order/{order:url_slug}', [OrderController::class, 'sent'])->name('order.sent');
 

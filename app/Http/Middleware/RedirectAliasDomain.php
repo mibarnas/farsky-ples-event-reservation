@@ -26,7 +26,9 @@ class RedirectAliasDomain
 
         $event = Setting::aliasEvent();
 
-        // Temporary (302) on purpose: the target changes whenever the admin picks another event.
-        return redirect()->away($event ? $appUrl.'/event/'.rawurlencode($event->url_slug) : $appUrl);
+        // Temporary (302) and never cached on purpose: the target changes whenever
+        // the admin picks another event, so no browser or proxy may remember it.
+        return redirect()->away($event ? $appUrl.'/event/'.rawurlencode($event->url_slug) : $appUrl)
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 }

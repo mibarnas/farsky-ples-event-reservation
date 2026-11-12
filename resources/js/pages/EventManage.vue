@@ -100,7 +100,9 @@ interface Event {
     contact_email: string;
     contact_phone: string | null;
     bank_account: string;
-    user_role: 'owner' | 'manager' | 'staff';
+    user_role: 'owner' | 'manager' | 'staff' | 'admin';
+    redirect_when_ended: boolean;
+    can_change_redirect: boolean;
     location: Location;
     tickets: Ticket[];
     orders: Order[];
@@ -130,6 +132,23 @@ const canManage = computed(() => {
         props.event.user_role === 'owner' || props.event.user_role === 'manager'
     );
 });
+
+// Application admins without a role on the event only look in (read-only)
+const isAdminVisitor = computed(() => props.event.user_role === 'admin');
+
+const savingRedirect = ref(false);
+
+const toggleRedirectWhenEnded = (value: boolean) => {
+    router.put(
+        `/event/${props.event.url_slug}/redirect-when-ended`,
+        { redirect_when_ended: value },
+        {
+            preserveScroll: true,
+            onStart: () => (savingRedirect.value = true),
+            onFinish: () => (savingRedirect.value = false),
+        },
+    );
+};
 
 const renderedDescription = computed(() => {
     if (!props.event.description) return '';
@@ -550,6 +569,7 @@ const occupancy = computed(() =>
                             Editor sedenia
                         </Link>
                         <Button
+                            v-if="!isAdminVisitor"
                             variant="outline"
                             class="h-auto px-4 py-2"
                             :disabled="sendingTestMail"
@@ -750,6 +770,45 @@ const occupancy = computed(() =>
                         <p v-else class="text-sm text-muted-foreground">
                             Podujatie nemá popis.
                         </p>
+                    </div>
+                </div>
+
+                <div
+                    class="rounded-xl border border-sidebar-border/70 bg-card p-6 dark:border-sidebar-border"
+                >
+                    <div class="flex items-start gap-3">
+                        <input
+                            id="redirect_when_ended"
+                            type="checkbox"
+                            class="mt-1 h-4 w-4 rounded border-gray-300"
+                            :checked="event.redirect_when_ended"
+                            :disabled="
+                                !event.can_change_redirect || savingRedirect
+                            "
+                            @change="
+                                toggleRedirectWhenEnded(
+                                    ($event.target as HTMLInputElement).checked,
+                                )
+                            "
+                        />
+                        <div>
+                            <Label
+                                for="redirect_when_ended"
+                                class="font-medium"
+                                :class="{
+                                    'cursor-pointer': event.can_change_redirect,
+                                }"
+                            >
+                                Po skončení presmerovať na aktuálne podujatie
+                            </Label>
+                            <p class="mt-1 text-sm text-muted-foreground">
+                                Deň po začiatku podujatia budú návštevníci jeho
+                                stránky presmerovaní na podujatie zvolené v
+                                administrácii (napr. pri starých záložkách alebo
+                                odkazoch). Organizátori podujatia stránku vidia
+                                aj naďalej.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </template>

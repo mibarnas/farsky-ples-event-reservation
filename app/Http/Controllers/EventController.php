@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Event;
 use App\Models\Location;
+use App\Models\Setting;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
@@ -133,25 +134,19 @@ class EventController extends Controller
             ])
             ->firstOrFail();
 
-        // Check if user has access to manage this event
+        // Collaborators manage the event; application admins may look in (read-only,
+        // apart from the "redirect when ended" switch).
         $user = $request->user();
-        $hasAccess = $event->user_id === $user->id ||
-                     $event->users()->where('user_id', $user->id)->exists();
-
-        if (!$hasAccess) {
+        if (! $event->canBeViewedBy($user)) {
             abort(403, 'Nemáte oprávnenie na správu tohto podujatia.');
         }
 
-        // Determine user role
-        $userRole = 'owner';
-        if ($event->user_id !== $user->id) {
-            $pivotRole = $event->users()->where('user_id', $user->id)->first();
-            $userRole = $pivotRole ? $pivotRole->pivot->role : 'staff';
-        }
+        $userRole = $event->roleFor($user) ?? 'admin';
 
         $eventData = $event->toArray();
         $eventData['user_role'] = $userRole;
         $eventData['reserved_seats'] = $event->computeReservedSeats();
+        $eventData['can_change_redirect'] = $event->canChangeRedirectBy($user);
 
         // Get all users for the collaborator selection (only if owner)
         $allUsers = [];
@@ -183,12 +178,7 @@ class EventController extends Controller
             ])
             ->firstOrFail();
 
-        // Check if user has access to view this event
-        $user = $request->user();
-        $hasAccess = $event->user_id === $user->id ||
-                     $event->users()->where('user_id', $user->id)->exists();
-
-        if (!$hasAccess) {
+        if (! $event->canBeViewedBy($request->user())) {
             abort(403, 'Nemáte oprávnenie na zobrazenie tohto podujatia.');
         }
 
@@ -347,7 +337,28 @@ class EventController extends Controller
             ->with('success', 'Podujatie bolo úspešne aktualizované!');
     }
 
-    public function show($url_slug)
+    /**
+     * Switch whether visitors of this event are sent to the current alias-domain
+     * event once it has ended. Owners, managers and application admins only.
+     */
+    public function updateRedirectWhenEnded(Request $request, Event $event)
+    {
+        if (! $event->canChangeRedirectBy($request->user())) {
+            abort(403, 'Nemáte oprávnenie na úpravu tohto podujatia.');
+        }
+
+        $validated = $request->validate([
+            'redirect_when_ended' => ['required', 'boolean'],
+        ]);
+
+        $event->forceFill(['redirect_when_ended' => $validated['redirect_when_ended']])->save();
+
+        return back()->with('success', $validated['redirect_when_ended']
+            ? 'Po skončení bude podujatie presmerované na aktuálne podujatie.'
+            : 'Presmerovanie po skončení bolo vypnuté.');
+    }
+
+    public function show(Request $request, $url_slug)
     {
         $event = Event::where('url_slug', $url_slug)
             ->with(['tickets', 'location', 'orders' => function($query) {
@@ -355,6 +366,22 @@ class EventController extends Controller
                       ->with('tickets');
             }])
             ->firstOrFail();
+
+        // Visitors can still land on a finished event through an old bookmark, a
+        // shared link or a redirect their browser cached earlier (e.g. a 301 from
+        // the alias domain). Send them to the event currently selected for the
+        // alias domain instead. Only when the event has this switched on; people
+        // working on the event (and admins) still see the page.
+        $current = $event->redirect_when_ended ? Setting::aliasEvent() : null;
+        $user = $request->user();
+        if ($current
+            && ! $current->is($event)
+            && $event->hasEnded()
+            && ! $current->hasEnded()
+            && ! $event->canBeViewedBy($user)) {
+            return redirect()->route('event.show', $current->url_slug)
+                ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        }
 
         $tickets = $event->tickets;
 

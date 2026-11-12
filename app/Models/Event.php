@@ -45,6 +45,7 @@ class Event extends Model
         'registration_end' => 'datetime',
         'user_id' => 'integer',
         'location_id' => 'integer',
+        'redirect_when_ended' => 'boolean',
     ];
 
     /**
@@ -137,6 +138,14 @@ class Event extends Model
     }
 
     /**
+     * Whether the event is over (a day after it started, so the page stays up on the night itself).
+     */
+    public function hasEnded(): bool
+    {
+        return $this->start_time !== null && $this->start_time->copy()->addDay()->isPast();
+    }
+
+    /**
      * Whether the public can currently place orders: inside the registration
      * window and before the event itself starts.
      */
@@ -163,6 +172,24 @@ class Event extends Model
         }
 
         return $this->users()->whereKey($user->id)->first()?->pivot->role;
+    }
+
+    /**
+     * Whether the user may open the event dashboard: collaborators, plus
+     * application admins (who otherwise only get read access there).
+     */
+    public function canBeViewedBy(?User $user): bool
+    {
+        return $user !== null && ($this->roleFor($user) !== null || $user->isAdmin());
+    }
+
+    /**
+     * Whether the user may switch "redirect when ended": owners, managers and admins.
+     */
+    public function canChangeRedirectBy(?User $user): bool
+    {
+        return $user !== null
+            && (in_array($this->roleFor($user), ['owner', 'manager'], true) || $user->isAdmin());
     }
 
     public function computeReservedSeats() {
