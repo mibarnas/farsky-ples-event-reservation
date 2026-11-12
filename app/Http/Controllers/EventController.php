@@ -388,9 +388,10 @@ class EventController extends Controller
      */
     private function locationsWithSeats()
     {
-        return Location::select('id', 'address', 'places_total', 'svg_map')->get()
+        return Location::select('id', 'name', 'address', 'places_total', 'svg_map')->get()
             ->map(fn (Location $location) => [
                 'id' => $location->id,
+                'name' => $location->name,
                 'address' => $location->address,
                 'places_total' => $location->places_total,
                 'svg_map' => $location->svg_map,

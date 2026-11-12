@@ -56,6 +56,8 @@ class SeatPlanEditorTest extends TestCase
         $location = Location::where('svg_map', '/sedenie/vajnory-parket-dole.svg')->first();
 
         $this->assertNotNull($location);
+        $this->assertSame('DK Vajnory 2027', $location->name);
+        $this->assertSame('DK Vajnory, Pod lipami 10036/2, 831 07 Vajnory', $location->address);
         $this->assertSame(range(1, 144), collect($location->seatNumbers())->sort()->values()->all());
     }
 

@@ -4,6 +4,7 @@ import { inject, type InjectionKey, type Ref } from 'vue';
 
 export interface WizardLocation {
     id: number;
+    name: string;
     address: string;
     places_total: number;
     svg_map: string | null;

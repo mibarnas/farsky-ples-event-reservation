@@ -11,6 +11,7 @@ class Location extends Model
     use HasFactory;
 
     protected $fillable = [
+        'name',
         'address',
         'svg_map',
         'places_total',

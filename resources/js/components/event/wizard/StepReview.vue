@@ -51,7 +51,8 @@ const sections = computed(() => [
     {
         key: 'venue' as StepKey,
         rows: [
-            ['Lokalita', selectedLocation.value?.address ?? '—'],
+            ['Lokalita', selectedLocation.value?.name ?? '—'],
+            ['Adresa', selectedLocation.value?.address ?? '—'],
             [
                 'Počet miest',
                 String(

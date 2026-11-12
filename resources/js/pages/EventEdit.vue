@@ -21,6 +21,7 @@ import { computed, nextTick, ref } from 'vue';
 
 interface Location {
     id: number;
+    name: string;
     address: string;
     places_total: number;
     svg_map: string | null;
@@ -586,7 +587,7 @@ const submit = () => {
                                     :key="location.id"
                                     :value="location.id"
                                 >
-                                    {{ location.address }} ({{
+                                    {{ location.name }} ({{
                                         location.places_total
                                     }}
                                     miest)

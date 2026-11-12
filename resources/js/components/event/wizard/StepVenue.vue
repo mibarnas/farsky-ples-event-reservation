@@ -36,6 +36,9 @@ watch(selectedLocation, () => (hoveredSeat.value = null));
                     />
                     <span class="flex-1">
                         <span class="block font-medium">{{
+                            location.name
+                        }}</span>
+                        <span class="block text-sm text-muted-foreground">{{
                             location.address
                         }}</span>
                         <span class="block text-sm text-muted-foreground">

@@ -12,6 +12,7 @@ class LocationFactory extends Factory
     public function definition(): array
     {
         return [
+            'name' => $this->faker->unique()->words(3, true),
             'address' => $this->faker->address(),
             'svg_map' => '/sedenie/seatmap.svg',
             'places_total' => $this->faker->numberBetween(20, 400),
