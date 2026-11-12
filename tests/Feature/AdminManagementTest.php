@@ -95,7 +95,9 @@ class AdminManagementTest extends TestCase
         $event = Event::factory()->create();
 
         $this->actingAs($admin);
-        $this->get(route('event.manage', $event->url_slug))->assertForbidden();
+        $this->get(route('event.manage', $event->url_slug))->assertOk();
         $this->get(route('event.edit', $event->url_slug))->assertForbidden();
+        $this->put(route('event.update', $event->url_slug), ['title' => 'Hacked'])->assertForbidden();
+        $this->assertNotSame('Hacked', $event->fresh()->title);
     }
 }

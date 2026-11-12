@@ -83,13 +83,19 @@ class AdminDashboardTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('auth.isAdmin', false));
     }
 
-    public function test_admin_cannot_manage_or_edit_events_they_are_not_collaborating_on()
+    public function test_admin_can_view_but_not_edit_events_they_are_not_collaborating_on()
     {
         $event = Event::factory()->create();
 
         $this->actingAs($this->admin);
 
-        $this->get(route('event.manage', $event->url_slug))->assertForbidden();
+        // Read-only dashboard access (role "admin"), but no editing
+        $this->get(route('event.manage', $event->url_slug))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('event.user_role', 'admin')
+                ->where('event.can_change_redirect', true)
+                ->where('allUsers', []));
         $this->get(route('event.edit', $event->url_slug))->assertForbidden();
         $this->put(route('event.update', $event->url_slug), ['title' => 'Hacked'])->assertForbidden();
 
