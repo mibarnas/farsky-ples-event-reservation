@@ -4,7 +4,11 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createSSRApp, DefineComponent, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// The build may run without the production .env (e.g. in CI), so prefer the
+// app name the server shares with every page (config('app.name')).
+let appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const nameFrom = (props: Record<string, unknown>) =>
+    typeof props.name === 'string' && props.name !== '' ? props.name : null;
 
 createServer(
     (page) =>
@@ -17,8 +21,13 @@ createServer(
                     `./pages/${name}.vue`,
                     import.meta.glob<DefineComponent>('./pages/**/*.vue'),
                 ),
-            setup: ({ App, props, plugin }) =>
-                createSSRApp({ render: () => h(App, props) }).use(plugin),
+            setup: ({ App, props, plugin }) => {
+                appName = nameFrom(props.initialPage.props) ?? appName;
+
+                return createSSRApp({ render: () => h(App, props) }).use(
+                    plugin,
+                );
+            },
         }),
     { cluster: true },
 );

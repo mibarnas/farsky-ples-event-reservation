@@ -6,7 +6,11 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { initializeTheme } from './composables/useAppearance';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+// The build may run without the production .env (e.g. in CI), so prefer the
+// app name the server shares with every page (config('app.name')).
+let appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const nameFrom = (props: Record<string, unknown>) =>
+    typeof props.name === 'string' && props.name !== '' ? props.name : null;
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -16,6 +20,7 @@ createInertiaApp({
             import.meta.glob<DefineComponent>('./pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
+        appName = nameFrom(props.initialPage.props) ?? appName;
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .mount(el);
