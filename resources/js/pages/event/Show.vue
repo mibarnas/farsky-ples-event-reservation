@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import EventLayout from '@/layouts/EventLayout.vue';
 import { create } from "@/routes/order";
 import { Link, usePage } from '@inertiajs/vue3';
@@ -60,37 +60,73 @@ const formattedLocation = computed(() => {
   return props.location.address.replace(/\r?\\n|\r/g, ', ');
 });
 
-const isWithinRegistrationWindow = computed(() => {
-  const now = new Date();
+// Ticks every second so the countdown updates live and the buy button
+// unlocks as soon as registration opens. Only started on the client (SSR-safe).
+const now = ref(new Date());
+let nowTimer: ReturnType<typeof setInterval> | undefined;
+onMounted(() => {
+  now.value = new Date();
+  nowTimer = setInterval(() => {
+    now.value = new Date();
+  }, 1000);
+});
+onUnmounted(() => {
+  if (nowTimer) clearInterval(nowTimer);
+});
 
+const formatDateTime = (value?: string) => {
+  if (!value) return '';
+  return new Date(value).toLocaleString('sk-SK', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const formattedRegistrationStart = computed(() => formatDateTime(props.event.registration_start));
+const formattedRegistrationEnd = computed(() => formatDateTime(props.event.registration_end));
+
+const isWithinRegistrationWindow = computed(() => {
   if (props.event.registration_start) {
     const startDate = new Date(props.event.registration_start);
-    if (now < startDate) return false;
+    if (now.value < startDate) return false;
   }
 
   if (props.event.registration_end) {
     const endDate = new Date(props.event.registration_end);
-    if (now > endDate) return false;
+    if (now.value > endDate) return false;
   }
 
-  if (props.event.start_time && now >= new Date(props.event.start_time)) return false;
+  if (props.event.start_time && now.value >= new Date(props.event.start_time)) return false;
 
   return true;
 });
 
 const registrationNotStarted = computed(() => {
   if (!props.event.registration_start) return false;
-  const now = new Date();
   const startDate = new Date(props.event.registration_start);
-  return now < startDate;
+  return now.value < startDate;
 });
 
 const registrationEnded = computed(() => {
-  const now = new Date();
-  if (props.event.start_time && now >= new Date(props.event.start_time)) return true;
+  if (props.event.start_time && now.value >= new Date(props.event.start_time)) return true;
   if (!props.event.registration_end) return false;
   const endDate = new Date(props.event.registration_end);
-  return now > endDate;
+  return now.value > endDate;
+});
+
+const countdown = computed(() => {
+  if (!registrationNotStarted.value || !props.event.registration_start) return null;
+  const diff = Math.max(0, new Date(props.event.registration_start).getTime() - now.value.getTime());
+  const totalSeconds = Math.floor(diff / 1000);
+  return [
+    { value: Math.floor(totalSeconds / 86400), label: 'dní' },
+    { value: Math.floor((totalSeconds % 86400) / 3600), label: 'hodín' },
+    { value: Math.floor((totalSeconds % 3600) / 60), label: 'minút' },
+    { value: totalSeconds % 60, label: 'sekúnd' },
+  ];
 });
 
 const isSoldOut = computed(() => {
@@ -210,7 +246,23 @@ const backgroundImageUrl = computed(() => {
             </div>
         </div>
 
-        <div class="flex w-full justify-center mt-8">
+        <div v-if="countdown" class="text-center mt-8">
+            <p class="dark:text-gray-200 font-bold mb-3">Registrácia začne o</p>
+            <div class="flex justify-center gap-3">
+                <div
+                    v-for="part in countdown"
+                    :key="part.label"
+                    class="flex flex-col items-center min-w-16 rounded-lg bg-white/70 dark:bg-black/40 px-3 py-2"
+                >
+                    <span class="text-3xl font-extrabold tabular-nums dark:text-white">
+                        {{ String(part.value).padStart(2, '0') }}
+                    </span>
+                    <span class="text-xs uppercase text-gray-600 dark:text-gray-300">{{ part.label }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div v-else class="flex w-full justify-center mt-8">
             <Button
                 :class="'mt-4 ' + (!canPurchase ? ' disabled opacity-50  cursor-default' : ' cusror-pointer')"
                 :tabindex="4"
@@ -221,6 +273,16 @@ const backgroundImageUrl = computed(() => {
                 {{ buttonText }}
             </Button>
         </div>
+
+        <p
+            v-if="formattedRegistrationStart || formattedRegistrationEnd"
+            class="mt-6 text-sm text-center dark:text-gray-200"
+        >
+            <i class="fas fa-clock mr-2"></i>
+            Registrácia:
+            <span v-if="formattedRegistrationStart">od <strong>{{ formattedRegistrationStart }}</strong></span>
+            <span v-if="formattedRegistrationEnd"> do <strong>{{ formattedRegistrationEnd }}</strong></span>
+        </p>
     </EventLayout>
 </template>
 
