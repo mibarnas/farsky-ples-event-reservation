@@ -77,6 +77,9 @@ jobs:
             exit 1
           fi
           git merge --ff-only FETCH_HEAD
+          # Shown in the site footer so it is clear which build is live (see App\Support\AppVersion).
+          printf '{"commit":"%s","build":"%s","deployed_at":"%s"}\n' \
+            "${GITHUB_SHA}" "${GITHUB_RUN_NUMBER}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > version.json
           # --no-scripts: bootstrap/cache belongs to www-data, so package discovery runs below as www-data.
           composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader --no-scripts
 

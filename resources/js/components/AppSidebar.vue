@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppVersion from '@/components/AppVersion.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -66,6 +67,7 @@ const footerNavItems: NavItem[] = [
         <SidebarFooter>
             <NavFooter :items="footerNavItems" />
             <NavUser />
+            <AppVersion class="block px-2 group-data-[collapsible=icon]:hidden" />
         </SidebarFooter>
     </Sidebar>
     <slot />

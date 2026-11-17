@@ -25,7 +25,14 @@ export type AppPageProps<
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;
+    appVersion: AppVersion;
 };
+
+export interface AppVersion {
+    commit: string | null;
+    build: string | null;
+    deployed_at: string | null;
+}
 
 export interface User {
     id: number;
